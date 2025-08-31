@@ -1,0 +1,276 @@
+# Markdown to Word 转换器配置文件
+
+# 应用程序配置
+app:
+  name: "Markdown to Word Converter"
+  version: "1.0.0"
+  description: "功能强大的Markdown到Word文档转换工具"
+  author: "Markdown转换器开发团队"
+  
+# 转换器配置
+converter:
+  # 默认样式主题
+  default_style: "default"
+  
+  # 输出格式
+  output_format: "docx"
+  
+  # 编码设置
+  input_encoding: "utf-8"
+  output_encoding: "utf-8"
+  
+  # 是否启用图片下载
+  image_download: true
+  
+  # 图片下载超时时间（秒）
+  image_timeout: 30
+  
+  # 最大文件大小（MB）
+  max_file_size: 100
+  
+  # 是否启用语法高亮
+  syntax_highlighting: true
+  
+  # 是否生成目录
+  generate_toc: true
+  
+  # 是否添加页码
+  add_page_numbers: true
+
+# 样式配置
+styles:
+  # 样式文件目录
+  styles_dir: "src/templates/styles"
+  
+  # 主题文件目录
+  themes_dir: "src/templates/themes"
+  
+  # 自定义样式目录
+  custom_styles_dir: "custom_styles"
+  
+  # 默认字体配置
+  default_fonts:
+    chinese: "微软雅黑"
+    english: "Calibri"
+    code: "Consolas"
+  
+  # 字体回退列表
+  font_fallbacks:
+    "微软雅黑": ["Microsoft YaHei", "SimHei", "Arial"]
+    "Times New Roman": ["Times", "serif"]
+    "Calibri": ["Arial", "Helvetica", "sans-serif"]
+    "Consolas": ["Monaco", "Courier New", "monospace"]
+
+# 图片处理配置
+image:
+  # 支持的图片格式
+  supported_formats: [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg"]
+  
+  # 最大图片尺寸（像素）
+  max_width: 1920
+  max_height: 1080
+  
+  # 图片质量（1-100）
+  quality: 85
+  
+  # 是否启用图片压缩
+  compression: true
+  
+  # 图片缓存目录
+  cache_dir: "cache/images"
+  
+  # 缓存过期时间（小时）
+  cache_expire: 24
+  
+  # 是否保持图片比例
+  keep_aspect_ratio: true
+
+# 表格配置
+table:
+  # 默认表格样式
+  default_style: "grid"
+  
+  # 是否自动调整列宽
+  auto_fit: true
+  
+  # 最大列数
+  max_columns: 20
+  
+  # 最大行数
+  max_rows: 1000
+  
+  # 单元格最大字符数
+  max_cell_length: 1000
+
+# 代码块配置
+code:
+  # 支持的编程语言
+  supported_languages: [
+    "python", "javascript", "java", "c", "cpp", "csharp",
+    "html", "css", "sql", "bash", "powershell", "yaml",
+    "json", "xml", "markdown", "text"
+  ]
+  
+  # 默认语言（当未指定时）
+  default_language: "text"
+  
+  # 是否显示行号
+  show_line_numbers: false
+  
+  # 代码块最大行数
+  max_lines: 1000
+  
+  # 制表符宽度
+  tab_width: 4
+
+# 性能配置
+performance:
+  # 并发处理数量
+  max_workers: 4
+  
+  # 内存限制（MB）
+  memory_limit: 512
+  
+  # 处理超时时间（秒）
+  timeout: 300
+  
+  # 是否启用缓存
+  enable_cache: true
+  
+  # 缓存目录
+  cache_dir: "cache"
+  
+  # 缓存大小限制（MB）
+  cache_size_limit: 100
+
+# 日志配置
+logging:
+  # 日志级别
+  level: "INFO"
+  
+  # 日志格式
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} - {message}"
+  
+  # 日志文件
+  file: "logs/converter.log"
+  
+  # 日志文件最大大小（MB）
+  max_size: 10
+  
+  # 保留的日志文件数量
+  backup_count: 5
+  
+  # 是否输出到控制台
+  console: true
+
+# 网络配置
+network:
+  # 请求超时时间（秒）
+  timeout: 30
+  
+  # 重试次数
+  retry_count: 3
+  
+  # 重试间隔（秒）
+  retry_delay: 1
+  
+  # User-Agent
+  user_agent: "MarkdownToWordConverter/1.0.0"
+  
+  # 代理设置（可选）
+  proxy:
+    http: null
+    https: null
+  
+  # SSL验证
+  verify_ssl: true
+
+# 输出配置
+output:
+  # 默认输出目录
+  default_dir: "output"
+  
+  # 文件名模板
+  filename_template: "{name}_{timestamp}"
+  
+  # 时间戳格式
+  timestamp_format: "%Y%m%d_%H%M%S"
+  
+  # 是否覆盖已存在的文件
+  overwrite: false
+  
+  # 是否创建备份
+  create_backup: true
+  
+  # 备份目录
+  backup_dir: "backup"
+
+# 错误处理配置
+error_handling:
+  # 是否继续处理其他文件（批量转换时）
+  continue_on_error: true
+  
+  # 是否生成错误报告
+  generate_error_report: true
+  
+  # 错误报告文件
+  error_report_file: "logs/error_report.txt"
+  
+  # 是否在错误时显示详细信息
+  verbose_errors: true
+
+# 开发配置
+development:
+  # 是否启用调试模式
+  debug: false
+  
+  # 是否启用详细输出
+  verbose: false
+  
+  # 是否启用性能分析
+  profiling: false
+  
+  # 测试数据目录
+  test_data_dir: "tests/fixtures"
+  
+  # 临时文件目录
+  temp_dir: "temp"
+
+# 插件配置
+plugins:
+  # 是否启用插件系统
+  enabled: false
+  
+  # 插件目录
+  plugins_dir: "plugins"
+  
+  # 已启用的插件列表
+  enabled_plugins: []
+  
+  # 插件配置
+  plugin_configs: {}
+
+# 国际化配置
+i18n:
+  # 默认语言
+  default_language: "zh_CN"
+  
+  # 支持的语言
+  supported_languages: ["zh_CN", "en_US"]
+  
+  # 语言文件目录
+  locale_dir: "locale"
+
+# 更新配置
+update:
+  # 是否检查更新
+  check_updates: true
+  
+  # 更新检查间隔（小时）
+  check_interval: 24
+  
+  # 更新服务器URL
+  update_url: "https://api.github.com/repos/your-username/markdown-to-word/releases/latest"
+  
+  # 是否自动下载更新
+  auto_download: false

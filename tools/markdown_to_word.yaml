@@ -1,0 +1,153 @@
+identity:
+  name: "markdown_to_word"
+  author: "luyike"
+  label:
+    en_US: "markdown_to_word"
+    zh_Hans: "markdown_to_word"
+    pt_BR: "markdown_to_word"
+description:
+  human:
+    en_US: "md"
+    zh_Hans: "md"
+    pt_BR: "md"
+  llm: "md"
+parameters:
+  - name: markdown_text
+    type: string
+    required: true
+    label:
+      en_US: markdown text
+      zh_Hans: markdown 文本
+      pt_BR: markdown 文本
+    human_description:
+      en_US: "md"
+      zh_Hans: "md"
+      pt_BR: "md"
+    llm_description: "md"
+    # 使用llm类型：当参数需要根据用户输入和上下文动态生成时
+    # 使用form类型：当参数是固定配置项，需要用户预先设置时
+    form: llm
+  
+  - name: templates
+    type: string
+    required: false
+    label:
+      en_US: template format
+      zh_Hans: 模板格式
+      pt_BR: formato de modelo
+    human_description:
+      en_US: "Template format for document styling"
+      zh_Hans: "文档样式模板格式"
+      pt_BR: "Formato de modelo para estilo de documento"
+    llm_description: "Template format for document styling"
+    form: form
+  
+  - name: font_family
+    type: string
+    required: false
+    default: "微软雅黑"
+    label:
+      en_US: font family
+      zh_Hans: 字体
+      pt_BR: família de fonte
+    human_description:
+      en_US: "Font family: Microsoft YaHei/SimSun/Times New Roman"
+      zh_Hans: "字体: 微软雅黑/宋体/Times New Roman"
+      pt_BR: "Família de fonte: Microsoft YaHei/SimSun/Times New Roman"
+    llm_description: "Font family for document text"
+    form: form
+  
+  - name: font_size
+    type: number
+    required: false
+    default: 12
+    label:
+      en_US: font size
+      zh_Hans: 正文字号
+      pt_BR: tamanho da fonte
+    human_description:
+      en_US: "Font size: 10-18"
+      zh_Hans: "正文字号: 10-18"
+      pt_BR: "Tamanho da fonte: 10-18"
+    llm_description: "Font size for document text (10-18)"
+    form: form
+  
+  - name: line_spacing
+    type: number
+    required: false
+    default: 1.5
+    label:
+      en_US: line spacing
+      zh_Hans: 行距
+      pt_BR: espaçamento de linha
+    human_description:
+      en_US: "Line spacing: 1.0/1.5/2.0"
+      zh_Hans: "行距: 1.0/1.5/2.0"
+      pt_BR: "Espaçamento de linha: 1.0/1.5/2.0"
+    llm_description: "Line spacing for document text (1.0/1.5/2.0)"
+    form: form
+  
+  - name: page_margins
+    type: number
+    required: false
+    default: 2.5
+    label:
+      en_US: page margins
+      zh_Hans: 页边距
+      pt_BR: margens da página
+    human_description:
+      en_US: "Page margins in cm: 2.0-4.0, same for all sides"
+      zh_Hans: "页边距(厘米): 2.0-4.0，四边相同"
+      pt_BR: "Margens da página em cm: 2.0-4.0, iguais para todos os lados"
+    llm_description: "Page margins in centimeters (2.0-4.0)"
+    form: form
+  
+  - name: paper_size
+    type: string
+    required: false
+    default: "A4"
+    label:
+      en_US: paper size
+      zh_Hans: 纸张
+      pt_BR: tamanho do papel
+    human_description:
+      en_US: "Paper size: A4/A3/Letter"
+      zh_Hans: "纸张: A4/A3/Letter"
+      pt_BR: "Tamanho do papel: A4/A3/Letter"
+    llm_description: "Paper size for document (A4/A3/Letter)"
+    form: form
+  
+  - name: output_file
+    type: string
+    required: false
+    default: "output.docx"
+    label:
+      en_US: output file
+      zh_Hans: 输出文件名
+      pt_BR: arquivo de saída
+    human_description:
+      en_US: "Output file name"
+      zh_Hans: "输出文件名"
+      pt_BR: "Nome do arquivo de saída"
+    llm_description: "Output file name for the generated document"
+    form: form
+  
+  - name: add_page_numbers
+    type: boolean
+    required: false
+    default: true
+    label:
+      en_US: add page numbers
+      zh_Hans: 是否添加页码
+      pt_BR: adicionar números de página
+    human_description:
+      en_US: "Whether to add page numbers"
+      zh_Hans: "是否添加页码"
+      pt_BR: "Se deve adicionar números de página"
+    llm_description: "Whether to add page numbers to the document"
+    form: form
+
+
+extra:
+  python:
+    source: tools/markdown_to_word.py

@@ -1,0 +1,249 @@
+# 主题配置文件
+# 定义可用的主题和样式组合
+
+themes:
+  # 默认主题
+  default:
+    name: "默认主题"
+    description: "简洁清爽的默认主题"
+    style_template: "default.yaml"
+    color_scheme:
+      primary: "#000000"
+      secondary: "#666666"
+      accent: "#0066cc"
+      background: "#ffffff"
+      text: "#000000"
+      border: "#cccccc"
+    
+    # 自定义样式覆盖
+    overrides:
+      fonts:
+        body:
+          name: "微软雅黑"
+          size: 12
+      headings:
+        h1:
+          color: "#000000"
+  
+  # 学术主题
+  academic:
+    name: "学术主题"
+    description: "适合学术论文的正式主题"
+    style_template: "academic.yaml"
+    color_scheme:
+      primary: "#000000"
+      secondary: "#444444"
+      accent: "#000000"
+      background: "#ffffff"
+      text: "#000000"
+      border: "#000000"
+    
+    overrides:
+      fonts:
+        body:
+          name: "Times New Roman"
+          size: 12
+      paragraph:
+        line_spacing: 1.5
+        alignment: "justify"
+  
+  # 商务主题
+  business:
+    name: "商务主题"
+    description: "现代商务风格主题"
+    style_template: "business.yaml"
+    color_scheme:
+      primary: "#2c5aa0"
+      secondary: "#666666"
+      accent: "#0366d6"
+      background: "#ffffff"
+      text: "#333333"
+      border: "#cccccc"
+    
+    overrides:
+      fonts:
+        body:
+          name: "Calibri"
+          size: 11
+        heading:
+          color: "#2c5aa0"
+  
+  # 简约主题
+  minimal:
+    name: "简约主题"
+    description: "极简风格主题"
+    style_template: "default.yaml"
+    color_scheme:
+      primary: "#333333"
+      secondary: "#666666"
+      accent: "#007acc"
+      background: "#ffffff"
+      text: "#333333"
+      border: "#e1e1e1"
+    
+    overrides:
+      fonts:
+        body:
+          name: "Helvetica"
+          size: 11
+      headings:
+        h1:
+          font_size: 16
+          space_before: 12
+          space_after: 8
+      paragraph:
+        space_after: 4
+  
+  # 深色主题
+  dark:
+    name: "深色主题"
+    description: "深色背景主题"
+    style_template: "default.yaml"
+    color_scheme:
+      primary: "#ffffff"
+      secondary: "#cccccc"
+      accent: "#4fc3f7"
+      background: "#2d2d2d"
+      text: "#ffffff"
+      border: "#555555"
+    
+    overrides:
+      fonts:
+        body:
+          color: "#ffffff"
+        heading:
+          color: "#ffffff"
+      code_block:
+        background_color: "#1e1e1e"
+        border_color: "#555555"
+      table:
+        border_color: "#555555"
+        header_background: "#404040"
+        alternate_row_color: "#353535"
+  
+  # 彩色主题
+  colorful:
+    name: "彩色主题"
+    description: "丰富多彩的主题"
+    style_template: "default.yaml"
+    color_scheme:
+      primary: "#e91e63"
+      secondary: "#9c27b0"
+      accent: "#2196f3"
+      background: "#ffffff"
+      text: "#333333"
+      border: "#e0e0e0"
+    
+    overrides:
+      headings:
+        h1:
+          color: "#e91e63"
+        h2:
+          color: "#9c27b0"
+        h3:
+          color: "#2196f3"
+      link:
+        color: "#2196f3"
+      code_block:
+        background_color: "#f3e5f5"
+        border_color: "#ce93d8"
+
+# 主题组合配置
+theme_combinations:
+  # 预定义的主题组合
+  combinations:
+    - name: "学术论文"
+      theme: "academic"
+      features:
+        - "toc"
+        - "footnotes"
+        - "bibliography"
+        - "page_numbers"
+      
+    - name: "商务报告"
+      theme: "business"
+      features:
+        - "cover_page"
+        - "toc"
+        - "header_footer"
+        - "page_numbers"
+        - "watermark"
+      
+    - name: "技术文档"
+      theme: "minimal"
+      features:
+        - "toc"
+        - "syntax_highlighting"
+        - "code_blocks"
+        - "page_numbers"
+      
+    - name: "简单文档"
+      theme: "default"
+      features:
+        - "basic_formatting"
+        - "page_numbers"
+
+# 自定义主题模板
+custom_theme_template:
+  name: "自定义主题"
+  description: "用户自定义主题模板"
+  style_template: "default.yaml"
+  color_scheme:
+    primary: "#000000"
+    secondary: "#666666"
+    accent: "#0066cc"
+    background: "#ffffff"
+    text: "#000000"
+    border: "#cccccc"
+  
+  # 可自定义的属性
+  customizable_properties:
+    - "fonts"
+    - "colors"
+    - "spacing"
+    - "borders"
+    - "backgrounds"
+    - "alignment"
+
+# 主题应用规则
+application_rules:
+  # 文档类型映射
+  document_type_mapping:
+    "academic": "academic"
+    "business": "business"
+    "technical": "minimal"
+    "general": "default"
+  
+  # 自动检测规则
+  auto_detection:
+    enabled: true
+    rules:
+      - condition: "contains_bibliography"
+        theme: "academic"
+      - condition: "contains_charts"
+        theme: "business"
+      - condition: "contains_code_blocks"
+        theme: "minimal"
+      - condition: "default"
+        theme: "default"
+
+# 主题兼容性
+compatibility:
+  # Word版本兼容性
+  word_versions:
+    - "2016"
+    - "2019"
+    - "365"
+  
+  # 操作系统兼容性
+  operating_systems:
+    - "Windows"
+    - "macOS"
+    - "Linux"
+  
+  # 字体兼容性检查
+  font_fallbacks:
+    "微软雅黑": ["Microsoft YaHei", "SimHei", "Arial"]
+    "Times New Roman": ["Times", "serif"]
+    "Calibri": ["Arial", "Helvetica", "sans-serif"]
+    "Consolas": ["Monaco", "Courier New", "monospace"]

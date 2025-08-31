@@ -1,0 +1,211 @@
+# 默认样式模板配置
+name: "默认样式"
+description: "适用于一般文档的默认样式"
+version: "1.0.0"
+
+# 页面设置
+page:
+  width: 21.0  # cm
+  height: 29.7  # cm
+  margin_top: 2.54  # cm
+  margin_bottom: 2.54  # cm
+  margin_left: 3.18  # cm
+  margin_right: 3.18  # cm
+  orientation: "portrait"  # portrait or landscape
+
+# 字体设置
+fonts:
+  # 正文字体
+  body:
+    name: "微软雅黑"
+    size: 12
+    color: "#000000"
+    bold: false
+    italic: false
+  
+  # 标题字体
+  heading:
+    name: "微软雅黑"
+    size: 14
+    color: "#000000"
+    bold: true
+    italic: false
+  
+  # 代码字体
+  code:
+    name: "Consolas"
+    size: 10
+    color: "#333333"
+    bold: false
+    italic: false
+  
+  # 引用字体
+  quote:
+    name: "微软雅黑"
+    size: 11
+    color: "#666666"
+    bold: false
+    italic: true
+
+# 段落设置
+paragraph:
+  line_spacing: 1.15
+  space_before: 0
+  space_after: 6
+  first_line_indent: 0
+  alignment: "left"  # left, center, right, justify
+
+# 标题样式
+headings:
+  h1:
+    font_size: 18
+    bold: true
+    color: "#000000"
+    space_before: 12
+    space_after: 6
+    alignment: "left"
+    outline_level: 1
+  
+  h2:
+    font_size: 16
+    bold: true
+    color: "#000000"
+    space_before: 10
+    space_after: 6
+    alignment: "left"
+    outline_level: 2
+  
+  h3:
+    font_size: 14
+    bold: true
+    color: "#000000"
+    space_before: 8
+    space_after: 4
+    alignment: "left"
+    outline_level: 3
+  
+  h4:
+    font_size: 13
+    bold: true
+    color: "#000000"
+    space_before: 6
+    space_after: 4
+    alignment: "left"
+    outline_level: 4
+  
+  h5:
+    font_size: 12
+    bold: true
+    color: "#000000"
+    space_before: 6
+    space_after: 3
+    alignment: "left"
+    outline_level: 5
+  
+  h6:
+    font_size: 11
+    bold: true
+    color: "#000000"
+    space_before: 6
+    space_after: 3
+    alignment: "left"
+    outline_level: 6
+
+# 列表样式
+lists:
+  # 无序列表
+  unordered:
+    bullet_style: "bullet"  # bullet, dash, arrow
+    indent: 1.27  # cm
+    space_before: 0
+    space_after: 0
+    line_spacing: 1.0
+  
+  # 有序列表
+  ordered:
+    number_style: "decimal"  # decimal, lower_alpha, upper_alpha, lower_roman, upper_roman
+    indent: 1.27  # cm
+    space_before: 0
+    space_after: 0
+    line_spacing: 1.0
+
+# 表格样式
+table:
+  border_width: 0.5  # pt
+  border_color: "#000000"
+  cell_padding: 3  # pt
+  header_background: "#f0f0f0"
+  header_font_bold: true
+  alternate_row_color: "#f9f9f9"
+  alignment: "left"
+
+# 代码块样式
+code_block:
+  background_color: "#f5f5f5"
+  border_color: "#cccccc"
+  border_width: 1  # pt
+  padding: 8  # pt
+  font_family: "Consolas"
+  font_size: 10
+  line_spacing: 1.0
+  syntax_highlighting: true
+
+# 引用块样式
+quote_block:
+  background_color: "#f9f9f9"
+  border_left_color: "#cccccc"
+  border_left_width: 4  # pt
+  padding_left: 12  # pt
+  padding_top: 6  # pt
+  padding_bottom: 6  # pt
+  font_style: "italic"
+
+# 图片样式
+image:
+  max_width: 15  # cm
+  max_height: 20  # cm
+  alignment: "center"
+  caption_font_size: 10
+  caption_color: "#666666"
+  caption_alignment: "center"
+  border_width: 0
+  border_color: "#cccccc"
+
+# 链接样式
+link:
+  color: "#0066cc"
+  underline: true
+  visited_color: "#800080"
+
+# 页眉页脚
+header:
+  enabled: false
+  height: 1.25  # cm
+  font_size: 9
+  alignment: "center"
+  border_bottom: false
+
+footer:
+  enabled: false
+  height: 1.25  # cm
+  font_size: 9
+  alignment: "center"
+  border_top: false
+
+# 页码
+page_number:
+  enabled: true
+  position: "footer_center"  # header_left, header_center, header_right, footer_left, footer_center, footer_right
+  format: "第 {page} 页 共 {total} 页"
+  font_size: 9
+  color: "#666666"
+
+# 目录
+toc:
+  enabled: true
+  title: "目录"
+  max_level: 3
+  show_page_numbers: true
+  tab_leader: "dot"  # none, dot, dash, underscore
+  font_size: 12
+  heading_font_size: 14
