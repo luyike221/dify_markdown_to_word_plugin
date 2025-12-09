@@ -251,6 +251,86 @@ class StyleHandler:
         })
         
         self.themes['business'] = StyleTheme('business', business_styles)
+        
+        # 告警报告主题
+        alert_report_styles = default_styles.copy()
+        alert_report_styles.update({
+            'normal': ElementStyle(
+                font=FontStyle(name="宋体", size=14),  # 四号字体
+                paragraph=ParagraphStyle(
+                    line_spacing=28,  # 28磅固定值行距
+                    space_before=0,
+                    space_after=0,
+                    first_line_indent=0  # 0表示根据字体大小动态计算两个字符的宽度
+                )
+            ),
+            'heading1': ElementStyle(
+                font=FontStyle(name="宋体", size=22, bold=False, color="#000000"),  # 二号字体，黑色
+                paragraph=ParagraphStyle(
+                    alignment="center",  # 居中
+                    line_spacing=1.25,  # 1.25倍行距
+                    space_before=0,
+                    space_after=0,
+                    keep_with_next=True
+                )
+            ),
+            'heading2': ElementStyle(
+                font=FontStyle(name="黑体", size=16, bold=True, color="#000000"),  # 三号字体，黑色
+                paragraph=ParagraphStyle(
+                    line_spacing=28,  # 28磅固定值行距
+                    space_before=0,
+                    space_after=0,
+                    keep_with_next=True
+                )
+            ),
+            'heading3': ElementStyle(
+                font=FontStyle(name="黑体", size=15, bold=True, color="#000000"),  # 小三号字体，黑色
+                paragraph=ParagraphStyle(
+                    line_spacing=28,  # 28磅固定值行距
+                    space_before=0,
+                    space_after=0,
+                    keep_with_next=True
+                )
+            ),
+            'heading4': ElementStyle(
+                font=FontStyle(name="黑体", size=15, bold=True, color="#000000"),  # 小三号字体，黑色
+                paragraph=ParagraphStyle(
+                    line_spacing=28,  # 28磅固定值行距
+                    space_before=0,
+                    space_after=0,
+                    keep_with_next=True
+                )
+            ),
+            'heading5': ElementStyle(
+                font=FontStyle(name="黑体", size=15, bold=True, color="#000000"),  # 小三号字体，黑色
+                paragraph=ParagraphStyle(
+                    line_spacing=28,  # 28磅固定值行距
+                    space_before=0,
+                    space_after=0,
+                    keep_with_next=True
+                )
+            ),
+            'heading6': ElementStyle(
+                font=FontStyle(name="黑体", size=15, bold=True, color="#000000"),  # 小三号字体，黑色
+                paragraph=ParagraphStyle(
+                    line_spacing=28,  # 28磅固定值行距
+                    space_before=0,
+                    space_after=0,
+                    keep_with_next=True
+                )
+            ),
+            'table_header': ElementStyle(
+                font=FontStyle(name="微软雅黑", size=9, bold=True),  # 小五字体
+                paragraph=ParagraphStyle(alignment="center"),
+                background_color="#f44336"
+            ),
+            'table_cell': ElementStyle(
+                font=FontStyle(name="微软雅黑", size=9),  # 小五字体
+                paragraph=ParagraphStyle(alignment="center")
+            )
+        })
+        
+        self.themes['alert_report'] = StyleTheme('alert_report', alert_report_styles)
     
     def load_config(self, config_path: str):
         """加载样式配置文件"""
@@ -339,8 +419,8 @@ class StyleHandler:
         # 应用字体样式
         self._apply_font_style(paragraph, style.font)
         
-        # 应用段落样式
-        self._apply_paragraph_style(paragraph, style.paragraph)
+        # 应用段落样式，传递字体大小用于动态计算首行缩进
+        self._apply_paragraph_style(paragraph, style.paragraph, font_size=style.font.size)
         
         # 应用边框样式
         if style.border:
@@ -368,8 +448,16 @@ class StyleHandler:
                     b = int(color_hex[4:6], 16)
                     font.color.rgb = RGBColor(r, g, b)
     
-    def _apply_paragraph_style(self, paragraph, paragraph_style: ParagraphStyle):
-        """应用段落样式"""
+    def _apply_paragraph_style(self, paragraph, paragraph_style: ParagraphStyle, font_size: Optional[int] = None):
+        """应用段落样式
+        
+        Args:
+            paragraph: Word段落对象
+            paragraph_style: 段落样式配置
+            font_size: 字体大小（磅），用于动态计算首行缩进
+        """
+        from docx.enum.text import WD_LINE_SPACING
+        
         pf = paragraph.paragraph_format
         
         # 对齐方式
@@ -381,17 +469,35 @@ class StyleHandler:
         }
         paragraph.alignment = alignment_map.get(paragraph_style.alignment, WD_ALIGN_PARAGRAPH.LEFT)
         
-        # 行距
-        pf.line_spacing = paragraph_style.line_spacing
+        # 行距处理
+        # 如果 line_spacing >= 20，认为是固定值（磅），否则认为是倍数
+        if paragraph_style.line_spacing >= 20:
+            # 固定值行距（磅）
+            pf.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+            pf.line_spacing = Pt(paragraph_style.line_spacing)
+        else:
+            # 倍数行距
+            pf.line_spacing = paragraph_style.line_spacing
         
         # 段前段后间距
         pf.space_before = Pt(paragraph_style.space_before)
         pf.space_after = Pt(paragraph_style.space_after)
         
         # 缩进
-        pf.left_indent = Inches(paragraph_style.left_indent)
-        pf.right_indent = Inches(paragraph_style.right_indent)
-        pf.first_line_indent = Inches(paragraph_style.first_line_indent)
+        # 注意：配置中的值单位是厘米，需要转换为英寸
+        # 1厘米 = 1/2.54 英寸
+        pf.left_indent = Inches(paragraph_style.left_indent / 2.54)
+        pf.right_indent = Inches(paragraph_style.right_indent / 2.54)
+        
+        # 首行缩进：如果配置值为0且提供了字体大小，则动态计算两个字符的宽度
+        if paragraph_style.first_line_indent == 0 and font_size:
+            # 两个字符宽度 = 字体大小 × 2（磅），转换为英寸
+            # 1磅 = 1/72 英寸
+            first_line_indent_inches = (font_size * 2) / 72.0
+            pf.first_line_indent = Inches(first_line_indent_inches)
+        else:
+            # 使用配置值（厘米转英寸）
+            pf.first_line_indent = Inches(paragraph_style.first_line_indent / 2.54)
         
         # 分页控制
         pf.keep_together = paragraph_style.keep_together

@@ -82,13 +82,17 @@ class MarkdownToWordTool(Tool):
                 # 初始化转换器组件
                 style_handler = StyleHandler()
                 markdown_parser = MarkdownParser()
-                word_generator = WordGenerator()
                 
                 # 设置主题
                 if templates and templates != 'default':
                     if not style_handler.set_theme(templates):
                         # 如果主题不存在，使用默认主题
                         style_handler.set_theme('default')
+                else:
+                    style_handler.set_theme('default')
+                
+                # 将 StyleHandler 传递给 WordGenerator
+                word_generator = WordGenerator(style_handler=style_handler)
                 
                 # 解析Markdown
                 parsed_content = markdown_parser.parse(markdown_text)

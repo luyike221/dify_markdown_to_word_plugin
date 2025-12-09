@@ -126,13 +126,242 @@ class MarkdownParser:
     
     def _build_document_tree(self, html_content: str, original_text: str) -> MarkdownElement:
         """构建文档树"""
-        # 这里需要进一步解析HTML内容，构建结构化的文档树
-        # 暂时返回基本结构
+        try:
+            from bs4 import BeautifulSoup
+            
+            # 解析HTML内容
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # 创建文档根元素
+            document = MarkdownElement(
+                element_type='document',
+                content='',
+                attributes={'original_text': original_text}
+            )
+            
+            # 不再自动提取和添加标题，标题应该由 Markdown 中的 H1 标题处理
+            # title = self._extract_title(original_text)
+            # if title:
+            #     document.attributes['title'] = title
+            
+            # 解析HTML元素并构建文档树
+            self._parse_html_elements(soup, document)
+            
+            return document
+        except ImportError:
+            # 如果没有BeautifulSoup，使用简单方法
+            # 直接从原始Markdown文本解析
+            return self._build_document_tree_from_markdown(original_text)
+        except Exception as e:
+            print(f"解析HTML失败，使用备用方法: {e}")
+            return self._build_document_tree_from_markdown(original_text)
+    
+    def _parse_html_elements(self, soup, parent: MarkdownElement):
+        """解析HTML元素并添加到文档树"""
+        for element in soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'pre', 'blockquote', 'ul', 'ol', 'table', 'img']):
+            if element.name.startswith('h'):
+                # 处理标题
+                level = int(element.name[1])
+                heading = MarkdownElement(
+                    element_type=f'heading{level}',
+                    content=element.get_text().strip(),
+                    attributes={}
+                )
+                parent.children.append(heading)
+            elif element.name == 'p':
+                # 处理段落
+                text = element.get_text().strip()
+                if text:  # 只添加非空段落
+                    paragraph = MarkdownElement(
+                        element_type='paragraph',
+                        content=text,
+                        attributes={}
+                    )
+                    parent.children.append(paragraph)
+            elif element.name == 'pre':
+                # 处理代码块
+                code_text = element.get_text().strip()
+                code_element = element.find('code')
+                language = code_element.get('class', [''])[0].replace('language-', '') if code_element else ''
+                code_block = MarkdownElement(
+                    element_type='code_block',
+                    content=code_text,
+                    attributes={'language': language} if language else {}
+                )
+                parent.children.append(code_block)
+            elif element.name == 'blockquote':
+                # 处理引用
+                quote_text = element.get_text().strip()
+                quote = MarkdownElement(
+                    element_type='quote',
+                    content=quote_text,
+                    attributes={}
+                )
+                parent.children.append(quote)
+            elif element.name in ['ul', 'ol']:
+                # 处理列表
+                list_type = 'ordered' if element.name == 'ol' else 'unordered'
+                list_element = MarkdownElement(
+                    element_type='list',
+                    content='',
+                    attributes={'type': list_type}
+                )
+                for li in element.find_all('li', recursive=False):
+                    item_text = li.get_text().strip()
+                    if item_text:
+                        list_item = MarkdownElement(
+                            element_type='list_item',
+                            content=item_text,
+                            attributes={}
+                        )
+                        list_element.children.append(list_item)
+                if list_element.children:
+                    parent.children.append(list_element)
+            elif element.name == 'table':
+                # 处理表格
+                rows = element.find_all('tr')
+                if rows:
+                    table_data = []
+                    for row in rows:
+                        cells = row.find_all(['td', 'th'])
+                        row_data = [cell.get_text().strip() for cell in cells]
+                        if row_data:
+                            table_data.append(row_data)
+                    
+                    if table_data:
+                        table = MarkdownElement(
+                            element_type='table',
+                            content='',
+                            attributes={
+                                'rows': len(table_data),
+                                'cols': max(len(row) for row in table_data) if table_data else 0,
+                                'data': table_data
+                            }
+                        )
+                        parent.children.append(table)
+            elif element.name == 'img':
+                # 处理图片
+                src = element.get('src', '')
+                alt = element.get('alt', '')
+                if src:
+                    image = MarkdownElement(
+                        element_type='image',
+                        content=alt,
+                        attributes={'src': src, 'alt': alt}
+                    )
+                    parent.children.append(image)
+    
+    def _build_document_tree_from_markdown(self, markdown_text: str) -> MarkdownElement:
+        """从Markdown文本直接构建文档树（备用方法）"""
         document = MarkdownElement(
             element_type='document',
-            content=html_content,
-            attributes={'original_text': original_text}
+            content='',
+            attributes={'original_text': markdown_text}
         )
+        
+        # 不再自动提取和添加标题，标题应该由 Markdown 中的 H1 标题处理
+        # title = self._extract_title(markdown_text)
+        # if title:
+        #     document.attributes['title'] = title
+        
+        lines = markdown_text.split('\n')
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            
+            # 处理标题
+            if line.startswith('#'):
+                level = len(line) - len(line.lstrip('#'))
+                heading_text = line.lstrip('#').strip()
+                if heading_text and level <= 6:
+                    heading = MarkdownElement(
+                        element_type=f'heading{level}',
+                        content=heading_text,
+                        attributes={}
+                    )
+                    document.children.append(heading)
+            
+            # 处理段落
+            elif line and not line.startswith('|') and not line.startswith('```') and not line.startswith('>'):
+                # 收集连续的非空行作为段落
+                paragraph_lines = [line]
+                i += 1
+                while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith(('#', '|', '```', '>', '-', '*')):
+                    paragraph_lines.append(lines[i].strip())
+                    i += 1
+                i -= 1  # 回退一步
+                
+                paragraph_text = ' '.join(paragraph_lines)
+                if paragraph_text:
+                    paragraph = MarkdownElement(
+                        element_type='paragraph',
+                        content=paragraph_text,
+                        attributes={}
+                    )
+                    document.children.append(paragraph)
+            
+            # 处理代码块
+            elif line.startswith('```'):
+                language = line[3:].strip()
+                code_lines = []
+                i += 1
+                while i < len(lines) and not lines[i].strip().startswith('```'):
+                    code_lines.append(lines[i])
+                    i += 1
+                
+                code_text = '\n'.join(code_lines).strip()
+                if code_text:
+                    code_block = MarkdownElement(
+                        element_type='code_block',
+                        content=code_text,
+                        attributes={'language': language} if language else {}
+                    )
+                    document.children.append(code_block)
+            
+            # 处理引用
+            elif line.startswith('>'):
+                quote_text = line[1:].strip()
+                quote = MarkdownElement(
+                    element_type='quote',
+                    content=quote_text,
+                    attributes={}
+                )
+                document.children.append(quote)
+            
+            # 处理表格
+            elif '|' in line:
+                table_lines = [line]
+                i += 1
+                # 跳过分隔行
+                if i < len(lines) and '|' in lines[i] and re.match(r'^\|?\s*:?-+:?\s*\|', lines[i]):
+                    i += 1
+                # 收集表格行
+                while i < len(lines) and '|' in lines[i]:
+                    table_lines.append(lines[i].strip())
+                    i += 1
+                i -= 1
+                
+                # 解析表格数据
+                table_data = []
+                for table_line in table_lines:
+                    if '|' in table_line and not re.match(r'^\|?\s*:?-+:?\s*\|', table_line):
+                        cells = [cell.strip() for cell in table_line.split('|') if cell.strip()]
+                        if cells:
+                            table_data.append(cells)
+                
+                if table_data:
+                    table = MarkdownElement(
+                        element_type='table',
+                        content='',
+                        attributes={
+                            'rows': len(table_data),
+                            'cols': max(len(row) for row in table_data) if table_data else 0,
+                            'data': table_data
+                        }
+                    )
+                    document.children.append(table)
+            
+            i += 1
         
         return document
     
