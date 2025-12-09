@@ -143,118 +143,8 @@ class StyleHandler:
     
     def _load_default_themes(self):
         """加载默认主题"""
-        # 默认主题
+        # 默认主题（使用告警报告样式）
         default_styles = {
-            'normal': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=12),
-                paragraph=ParagraphStyle(line_spacing=1.15, space_after=6)
-            ),
-            'heading1': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=18, bold=True),
-                paragraph=ParagraphStyle(space_before=12, space_after=6, keep_with_next=True)
-            ),
-            'heading2': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=16, bold=True),
-                paragraph=ParagraphStyle(space_before=10, space_after=6, keep_with_next=True)
-            ),
-            'heading3': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=14, bold=True),
-                paragraph=ParagraphStyle(space_before=8, space_after=6, keep_with_next=True)
-            ),
-            'heading4': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=13, bold=True),
-                paragraph=ParagraphStyle(space_before=6, space_after=6, keep_with_next=True)
-            ),
-            'heading5': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=12, bold=True),
-                paragraph=ParagraphStyle(space_before=6, space_after=6, keep_with_next=True)
-            ),
-            'heading6': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=12, bold=True, italic=True),
-                paragraph=ParagraphStyle(space_before=6, space_after=6, keep_with_next=True)
-            ),
-            'code_inline': ElementStyle(
-                font=FontStyle(name="Consolas", size=10, color="#333333"),
-                paragraph=ParagraphStyle(),
-                background_color="#f8f8f8"
-            ),
-            'code_block': ElementStyle(
-                font=FontStyle(name="Consolas", size=10, color="#333333"),
-                paragraph=ParagraphStyle(left_indent=0.2, space_before=6, space_after=6),
-                background_color="#f8f8f8",
-                border=BorderStyle(left={'style': 'single', 'width': 2, 'color': '#cccccc'})
-            ),
-            'quote': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=12, italic=True, color="#666666"),
-                paragraph=ParagraphStyle(left_indent=0.5, space_before=6, space_after=6),
-                border=BorderStyle(left={'style': 'single', 'width': 3, 'color': '#cccccc'})
-            ),
-            'table_header': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=12, bold=True),
-                paragraph=ParagraphStyle(alignment="center"),
-                background_color="#f0f0f0"
-            ),
-            'table_cell': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=11),
-                paragraph=ParagraphStyle()
-            ),
-            'caption': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=10, italic=True, color="#666666"),
-                paragraph=ParagraphStyle(alignment="center", space_before=3, space_after=6)
-            ),
-            'list_bullet': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=12),
-                paragraph=ParagraphStyle(left_indent=0.25, space_after=3)
-            ),
-            'list_number': ElementStyle(
-                font=FontStyle(name="微软雅黑", size=12),
-                paragraph=ParagraphStyle(left_indent=0.25, space_after=3)
-            )
-        }
-        
-        self.themes['default'] = StyleTheme('default', default_styles)
-        
-        # 学术论文主题
-        academic_styles = default_styles.copy()
-        academic_styles.update({
-            'normal': ElementStyle(
-                font=FontStyle(name="Times New Roman", size=12),
-                paragraph=ParagraphStyle(line_spacing=2.0, space_after=0, alignment="justify")
-            ),
-            'heading1': ElementStyle(
-                font=FontStyle(name="Times New Roman", size=16, bold=True),
-                paragraph=ParagraphStyle(alignment="center", space_before=24, space_after=12, keep_with_next=True)
-            ),
-            'heading2': ElementStyle(
-                font=FontStyle(name="Times New Roman", size=14, bold=True),
-                paragraph=ParagraphStyle(space_before=18, space_after=6, keep_with_next=True)
-            )
-        })
-        
-        self.themes['academic'] = StyleTheme('academic', academic_styles)
-        
-        # 商务报告主题
-        business_styles = default_styles.copy()
-        business_styles.update({
-            'normal': ElementStyle(
-                font=FontStyle(name="Calibri", size=11),
-                paragraph=ParagraphStyle(line_spacing=1.15, space_after=6)
-            ),
-            'heading1': ElementStyle(
-                font=FontStyle(name="Calibri", size=18, bold=True, color="#2F5597"),
-                paragraph=ParagraphStyle(space_before=12, space_after=6, keep_with_next=True)
-            ),
-            'heading2': ElementStyle(
-                font=FontStyle(name="Calibri", size=14, bold=True, color="#2F5597"),
-                paragraph=ParagraphStyle(space_before=10, space_after=6, keep_with_next=True)
-            )
-        })
-        
-        self.themes['business'] = StyleTheme('business', business_styles)
-        
-        # 告警报告主题
-        alert_report_styles = default_styles.copy()
-        alert_report_styles.update({
             'normal': ElementStyle(
                 font=FontStyle(name="宋体", size=14),  # 四号字体
                 paragraph=ParagraphStyle(
@@ -319,6 +209,22 @@ class StyleHandler:
                     keep_with_next=True
                 )
             ),
+            'code_inline': ElementStyle(
+                font=FontStyle(name="Consolas", size=10, color="#333333"),
+                paragraph=ParagraphStyle(),
+                background_color="#f8f8f8"
+            ),
+            'code_block': ElementStyle(
+                font=FontStyle(name="Consolas", size=10, color="#333333"),
+                paragraph=ParagraphStyle(left_indent=0.2, space_before=6, space_after=6),
+                background_color="#f8f8f8",
+                border=BorderStyle(left={'style': 'single', 'width': 2, 'color': '#cccccc'})
+            ),
+            'quote': ElementStyle(
+                font=FontStyle(name="微软雅黑", size=12, italic=True, color="#666666"),
+                paragraph=ParagraphStyle(left_indent=0.5, space_before=6, space_after=6),
+                border=BorderStyle(left={'style': 'single', 'width': 3, 'color': '#cccccc'})
+            ),
             'table_header': ElementStyle(
                 font=FontStyle(name="微软雅黑", size=9, bold=True),  # 小五字体
                 paragraph=ParagraphStyle(alignment="center"),
@@ -327,10 +233,60 @@ class StyleHandler:
             'table_cell': ElementStyle(
                 font=FontStyle(name="微软雅黑", size=9),  # 小五字体
                 paragraph=ParagraphStyle(alignment="center")
+            ),
+            'caption': ElementStyle(
+                font=FontStyle(name="微软雅黑", size=10, italic=True, color="#666666"),
+                paragraph=ParagraphStyle(alignment="center", space_before=3, space_after=6)
+            ),
+            'list_bullet': ElementStyle(
+                font=FontStyle(name="微软雅黑", size=12),
+                paragraph=ParagraphStyle(left_indent=0.25, space_after=3)
+            ),
+            'list_number': ElementStyle(
+                font=FontStyle(name="微软雅黑", size=12),
+                paragraph=ParagraphStyle(left_indent=0.25, space_after=3)
+            )
+        }
+        
+        self.themes['default'] = StyleTheme('default', default_styles)
+        
+        # 学术论文主题
+        academic_styles = default_styles.copy()
+        academic_styles.update({
+            'normal': ElementStyle(
+                font=FontStyle(name="Times New Roman", size=12),
+                paragraph=ParagraphStyle(line_spacing=2.0, space_after=0, alignment="justify")
+            ),
+            'heading1': ElementStyle(
+                font=FontStyle(name="Times New Roman", size=16, bold=True),
+                paragraph=ParagraphStyle(alignment="center", space_before=24, space_after=12, keep_with_next=True)
+            ),
+            'heading2': ElementStyle(
+                font=FontStyle(name="Times New Roman", size=14, bold=True),
+                paragraph=ParagraphStyle(space_before=18, space_after=6, keep_with_next=True)
             )
         })
         
-        self.themes['alert_report'] = StyleTheme('alert_report', alert_report_styles)
+        self.themes['academic'] = StyleTheme('academic', academic_styles)
+        
+        # 商务报告主题
+        business_styles = default_styles.copy()
+        business_styles.update({
+            'normal': ElementStyle(
+                font=FontStyle(name="Calibri", size=11),
+                paragraph=ParagraphStyle(line_spacing=1.15, space_after=6)
+            ),
+            'heading1': ElementStyle(
+                font=FontStyle(name="Calibri", size=18, bold=True, color="#2F5597"),
+                paragraph=ParagraphStyle(space_before=12, space_after=6, keep_with_next=True)
+            ),
+            'heading2': ElementStyle(
+                font=FontStyle(name="Calibri", size=14, bold=True, color="#2F5597"),
+                paragraph=ParagraphStyle(space_before=10, space_after=6, keep_with_next=True)
+            )
+        })
+        
+        self.themes['business'] = StyleTheme('business', business_styles)
     
     def load_config(self, config_path: str):
         """加载样式配置文件"""

@@ -242,15 +242,41 @@ class WordGenerator:
             else:
                 paragraph.add_run(str(content))
     
-    def _process_html_list(self, element):
-        """处理HTML列表"""
+    def _process_html_list(self, element, indent_level: int = 0):
+        """处理HTML列表
+        
+        Args:
+            element: HTML列表元素
+            indent_level: 缩进级别（用于嵌套列表）
+        """
         is_ordered = element.name == 'ol'
+        
+        # 计算左缩进：基础缩进 + 嵌套缩进
+        # 基础缩进：0.5 英寸（约 1.27 厘米），使列表比段落有更多缩进
+        # 嵌套缩进：每级嵌套增加 0.5 英寸
+        base_indent = Inches(0.5)
+        nested_indent = Inches(0.5 * indent_level)
+        total_indent = base_indent + nested_indent
+        
         for li in element.find_all('li', recursive=False):
-            text = li.get_text().strip()
+            # 根据列表类型选择样式
             if is_ordered:
-                self.document.add_paragraph(text, style='List Number')
+                # 有序列表使用 List Number 样式
+                paragraph = self.document.add_paragraph(style='List Number')
             else:
-                self.document.add_paragraph(text, style='List Bullet')
+                # 无序列表使用 List Bullet 样式
+                paragraph = self.document.add_paragraph(style='List Bullet')
+            
+            # 设置列表项的左缩进，使其比普通段落有更多缩进
+            paragraph.paragraph_format.left_indent = total_indent
+            
+            # 处理列表项内容，包括格式化文本（粗体、斜体、代码、链接等）
+            self._process_paragraph_content(paragraph, li)
+            
+            # 处理嵌套列表
+            nested_lists = li.find_all(['ul', 'ol'], recursive=False)
+            for nested_list in nested_lists:
+                self._process_html_list(nested_list, indent_level + 1)
     
     def _process_html_table(self, element):
         """处理HTML表格"""
@@ -712,15 +738,46 @@ class WordGenerator:
             error_placeholder = self.document.add_paragraph(f"[图片加载失败: {alt or src}]")
             error_placeholder.style = 'Caption'
     
-    def _process_list(self, element: MarkdownElement):
-        """处理列表"""
+    def _process_list(self, element: MarkdownElement, indent_level: int = 0):
+        """处理列表
+        
+        Args:
+            element: 列表元素
+            indent_level: 缩进级别（用于嵌套列表）
+        """
         list_type = element.attributes.get('type', 'unordered')
         
+        # 计算左缩进：基础缩进 + 嵌套缩进
+        # 基础缩进：0.5 英寸（约 1.27 厘米），使列表比段落有更多缩进
+        # 嵌套缩进：每级嵌套增加 0.5 英寸
+        base_indent = Inches(0.5)
+        nested_indent = Inches(0.5 * indent_level)
+        total_indent = base_indent + nested_indent
+        
         for item in element.children:
+            # 根据列表类型选择样式
             if list_type == 'ordered':
-                paragraph = self.document.add_paragraph(item.content, style='List Number')
+                # 有序列表使用 List Number 样式
+                paragraph = self.document.add_paragraph(style='List Number')
             else:
-                paragraph = self.document.add_paragraph(item.content, style='List Bullet')
+                # 无序列表使用 List Bullet 样式
+                paragraph = self.document.add_paragraph(style='List Bullet')
+            
+            # 设置列表项的左缩进，使其比普通段落有更多缩进
+            paragraph.paragraph_format.left_indent = total_indent
+            
+            # 处理列表项内容，包括格式化文本（粗体、斜体、代码、链接等）
+            if item.content:
+                self._process_formatted_text(paragraph, item.content)
+            
+            # 处理列表项的子元素（如嵌套列表、段落等）
+            for child in item.children:
+                if child.element_type == 'list':
+                    # 嵌套列表：递归处理，缩进级别+1
+                    self._process_list(child, indent_level + 1)
+                elif child.element_type == 'paragraph':
+                    # 列表项内的段落：作为列表项的一部分处理
+                    self._process_formatted_text(paragraph, child.content)
     
     def _process_quote(self, element: MarkdownElement):
         """处理引用"""

@@ -1,202 +1,262 @@
 # 默认样式模板配置
 name: "默认样式"
-description: "适用于一般文档的默认样式"
+description: "适用于系统告警报告、监控报告的样式"
 version: "1.0.0"
 
 # 页面设置
 page:
   width: 21.0  # cm
   height: 29.7  # cm
-  margin_top: 2.54  # cm
-  margin_bottom: 2.54  # cm
-  margin_left: 3.18  # cm
-  margin_right: 3.18  # cm
-  orientation: "portrait"  # portrait or landscape
+  margin_top: 2.5  # cm
+  margin_bottom: 2.5  # cm
+  margin_left: 3.0  # cm
+  margin_right: 2.5  # cm
+  orientation: "portrait"
 
 # 字体设置
 fonts:
   # 正文字体
   body:
-    name: "微软雅黑"
-    size: 12
+    name: "宋体"
+    size: 14  # 四号字体
     color: "#000000"
     bold: false
     italic: false
   
   # 标题字体
   heading:
-    name: "微软雅黑"
-    size: 14
+    name: "宋体"
+    size: 16  # 三号字体
     color: "#000000"
     bold: true
     italic: false
   
+  # 一级标题字体
+  heading1:
+    name: "宋体"
+    size: 22  # 二号字体
+    color: "#000000"
+    bold: false
+    italic: false
+  
   # 代码字体
   code:
-    name: "Consolas"
-    size: 10
-    color: "#333333"
+    name: "宋体"
+    size: 9
+    color: "#d32f2f"
     bold: false
     italic: false
   
   # 引用字体
   quote:
-    name: "微软雅黑"
-    size: 11
+    name: "宋体"
+    size: 10
     color: "#666666"
     bold: false
     italic: true
 
 # 段落设置
 paragraph:
-  line_spacing: 1.15
+  line_spacing: 28  # 28磅行距（固定值）
   space_before: 0
-  space_after: 6
-  first_line_indent: 0
-  alignment: "left"  # left, center, right, justify
+  space_after: 0
+  first_line_indent: 0  # 首行缩进两个字符（0表示根据字体大小动态计算）
+  alignment: "left"
 
 # 标题样式
 headings:
   h1:
-    font_size: 18
-    bold: true
+    font_size: 22  # 二号字体
+    font_name: "宋体"
+    bold: false
     color: "#000000"
-    space_before: 12
-    space_after: 6
-    alignment: "left"
+    space_before: 0
+    space_after: 0
+    alignment: "center"  # 居中显示
     outline_level: 1
+    line_spacing: 1.25  # 1.25倍行距
+    border_bottom: false
+    border_color: ""
+    border_width: 0
   
   h2:
-    font_size: 16
+    font_size: 16  # 三号字体
+    font_name: "黑体"
     bold: true
     color: "#000000"
-    space_before: 10
-    space_after: 6
+    space_before: 0
+    space_after: 0
     alignment: "left"
     outline_level: 2
+    line_spacing: 28  # 28磅行距
+    border_bottom: false
+    border_color: ""
+    border_width: 0
   
   h3:
-    font_size: 14
+    font_size: 15  # 小三号字体
+    font_name: "黑体"
     bold: true
     color: "#000000"
-    space_before: 8
-    space_after: 4
+    space_before: 0
+    space_after: 0
     alignment: "left"
     outline_level: 3
+    line_spacing: 28  # 28磅行距
+    border_bottom: false
+    border_color: ""
+    border_width: 0
   
   h4:
-    font_size: 13
+    font_size: 15  # 小三号字体
+    font_name: "黑体"
     bold: true
     color: "#000000"
-    space_before: 6
-    space_after: 4
+    space_before: 0
+    space_after: 0
     alignment: "left"
     outline_level: 4
+    line_spacing: 28  # 28磅行距
+    border_bottom: false
+    border_color: ""
+    border_width: 0
   
   h5:
-    font_size: 12
+    font_size: 15  # 小三号字体
+    font_name: "黑体"
     bold: true
     color: "#000000"
-    space_before: 6
-    space_after: 3
+    space_before: 0
+    space_after: 0
     alignment: "left"
     outline_level: 5
+    line_spacing: 28  # 28磅行距
+    border_bottom: false
+    border_color: ""
+    border_width: 0
   
   h6:
-    font_size: 11
+    font_size: 15  # 小三号字体
+    font_name: "黑体"
     bold: true
     color: "#000000"
-    space_before: 6
-    space_after: 3
+    space_before: 0
+    space_after: 0
     alignment: "left"
     outline_level: 6
+    line_spacing: 28  # 28磅行距
+    border_bottom: false
+    border_color: ""
+    border_width: 0
 
 # 列表样式
 lists:
   # 无序列表
   unordered:
-    bullet_style: "bullet"  # bullet, dash, arrow
+    bullet_style: "bullet"
     indent: 1.27  # cm
     space_before: 0
     space_after: 0
-    line_spacing: 1.0
+    line_spacing: 1.5
+    bullet_color: "#d32f2f"
   
   # 有序列表
   ordered:
-    number_style: "decimal"  # decimal, lower_alpha, upper_alpha, lower_roman, upper_roman
+    number_style: "decimal"
     indent: 1.27  # cm
     space_before: 0
     space_after: 0
-    line_spacing: 1.0
+    line_spacing: 1.5
+    number_color: "#d32f2f"
 
 # 表格样式
 table:
-  border_width: 0.5  # pt
-  border_color: "#000000"
-  cell_padding: 3  # pt
-  header_background: "#f0f0f0"
+  border_width: 1.0  # pt
+  border_color: "#424242"
+  cell_padding: 6  # pt
+  header_background: "#f44336"
+  header_font_color: "#ffffff"
   header_font_bold: true
-  alternate_row_color: "#f9f9f9"
-  alignment: "left"
+  alternate_row_color: "#fff3e0"
+  alignment: "center"
+  caption_position: "above"
+  caption_font_size: 10
+  caption_alignment: "center"
+  caption_color: "#666666"
+  # 告警级别颜色映射
+  alert_level_colors:
+    critical: "#d32f2f"  # 红色 - 严重告警
+    warning: "#ff9800"   # 橙色 - 警告告警
+    info: "#2196f3"      # 蓝色 - 信息告警
+    normal: "#4caf50"     # 绿色 - 正常
 
 # 代码块样式
 code_block:
   background_color: "#f5f5f5"
-  border_color: "#cccccc"
+  border_color: "#d32f2f"
   border_width: 1  # pt
   padding: 8  # pt
   font_family: "Consolas"
-  font_size: 10
-  line_spacing: 1.0
+  font_size: 9
+  line_spacing: 1.2
   syntax_highlighting: true
 
 # 引用块样式
 quote_block:
-  background_color: "#f9f9f9"
-  border_left_color: "#cccccc"
+  background_color: "#fff3e0"
+  border_left_color: "#ff9800"
   border_left_width: 4  # pt
   padding_left: 12  # pt
-  padding_top: 6  # pt
-  padding_bottom: 6  # pt
+  padding_top: 8  # pt
+  padding_bottom: 8  # pt
   font_style: "italic"
+  border_radius: 3  # pt
 
 # 图片样式
 image:
-  max_width: 15  # cm
+  max_width: 16  # cm
   max_height: 20  # cm
   alignment: "center"
   caption_font_size: 10
   caption_color: "#666666"
   caption_alignment: "center"
-  border_width: 0
+  caption_prefix: "图 "
+  border_width: 1
   border_color: "#cccccc"
 
 # 链接样式
 link:
-  color: "#0066cc"
+  color: "#d32f2f"
   underline: true
-  visited_color: "#800080"
+  visited_color: "#b71c1c"
+  hover_color: "#f44336"
 
 # 页眉页脚
 header:
-  enabled: false
-  height: 1.25  # cm
+  enabled: true
+  height: 1.5  # cm
   font_size: 9
   alignment: "center"
-  border_bottom: false
+  border_bottom: true
+  border_color: "#d32f2f"
+  content: "告警报告 - {title}"
+  font_color: "#666666"
 
 footer:
-  enabled: false
-  height: 1.25  # cm
+  enabled: true
+  height: 1.5  # cm
   font_size: 9
   alignment: "center"
-  border_top: false
+  border_top: true
+  border_color: "#cccccc"
+  content: "机密文档 - 仅供内部使用"
+  font_color: "#666666"
 
 # 页码
 page_number:
   enabled: true
-  position: "footer_center"  # header_left, header_center, header_right, footer_left, footer_center, footer_right
-  format: "第 {page} 页 共 {total} 页"
+  position: "footer_center"
+  format: "第 {page} 页 / 共 {total} 页"
   font_size: 9
   color: "#666666"
 
@@ -206,6 +266,47 @@ toc:
   title: "目录"
   max_level: 3
   show_page_numbers: true
-  tab_leader: "dot"  # none, dot, dash, underscore
-  font_size: 12
+  tab_leader: "dot"
+  font_size: 11
   heading_font_size: 14
+  heading_color: "#d32f2f"
+  page_break_before: true
+  page_break_after: true
+
+# 摘要/概述样式
+summary:
+  enabled: true
+  background_color: "#fff3e0"
+  border_color: "#ff9800"
+  border_width: 2
+  padding: 12  # pt
+  font_size: 11
+  title_font_size: 13
+  title_color: "#d32f2f"
+  title_bold: true
+
+# 告警统计样式
+alert_statistics:
+  enabled: true
+  highlight_critical: true
+  critical_color: "#d32f2f"
+  warning_color: "#ff9800"
+  info_color: "#2196f3"
+  normal_color: "#4caf50"
+  table_style: "alert_table"
+
+# 时间戳样式
+timestamp:
+  font_size: 9
+  color: "#999999"
+  alignment: "right"
+  format: "生成时间: {date} {time}"
+
+# 分隔线样式
+divider:
+  enabled: true
+  style: "solid"
+  width: 1  # pt
+  color: "#cccccc"
+  space_before: 12
+  space_after: 12

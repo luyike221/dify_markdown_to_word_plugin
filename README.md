@@ -1,60 +1,401 @@
 # Markdown to Word (Dify Plugin)
 
-Convert Markdown text into a styled Microsoft Word (.docx) document directly inside Dify. This tool accepts Markdown and presentation options (font, line spacing, margins, theme, etc.), generates a .docx file, and returns it to the workflow as a downloadable file along with JSON metadata.
+一个强大的 Markdown 转 Word 文档转换工具，支持灵活的模板机制，可快速生成符合不同场景需求的格式化 Word 文档。
 
-## Key Features
-- Markdown → Word (.docx) conversion
-- Configurable typography (font family/size) and layout (line spacing, margins, paper size)
-- Optional page numbers
-- Theme hook for future style templates
-- Returns both a file (docx) and a JSON message with useful metadata
+## 核心特性
 
-## Requirements
+### 🎨 模板机制（核心功能）
+
+本项目采用**双层模板架构**，提供高度可定制的文档样式系统：
+
+- **主题（Theme）**：定义文档的整体视觉风格和配色方案
+- **样式模板（Style Template）**：定义具体的字体、段落、表格等元素样式
+- **样式覆盖（Overrides）**：主题可以覆盖样式模板中的特定设置
+
+通过模板机制，您可以：
+- 快速切换不同的文档风格（学术、商务、简约等）
+- 复用样式配置，保持文档风格一致性
+- 灵活自定义，满足特定场景需求
+
+### 其他特性
+
+- ✅ Markdown → Word (.docx) 转换
+- ✅ 可配置的字体、字号、行距、页边距等
+- ✅ 支持页码、页眉页脚
+- ✅ 返回文档文件和 JSON 元数据
+- ✅ 支持表格、代码块、引用等丰富元素
+
+## 模板系统架构
+
+### 目录结构
+
+```
+src/templates/
+├── themes/
+│   └── theme_config.yaml      # 主题配置文件
+└── styles/
+    ├── default.yaml            # 默认样式模板
+    ├── academic.yaml           # 学术样式模板
+    └── business.yaml           # 商务样式模板
+```
+
+### 模板层次关系
+
+```
+主题（Theme）
+  ├── 引用样式模板（style_template）
+  ├── 定义配色方案（color_scheme）
+  └── 样式覆盖（overrides）
+      └── 覆盖样式模板中的特定设置
+```
+
+### 内置主题
+
+系统内置了多个预定义主题，开箱即用：
+
+| 主题名称 | 适用场景 | 特点 |
+|---------|---------|------|
+| `default` | 系统告警报告、监控报告 | 正式、专业，红色主色调 |
+| `academic` | 学术论文 | Times New Roman 字体，双倍行距 |
+| `business` | 商务报告 | Calibri 字体，现代商务风格 |
+| `minimal` | 技术文档 | 极简风格，Helvetica 字体 |
+| `dark` | 深色主题文档 | 深色背景，适合演示 |
+| `colorful` | 彩色文档 | 丰富多彩的配色方案 |
+
+## 使用方法
+
+### 基本使用
+
+在 Dify 工作流中使用时，只需提供 Markdown 文本和选择模板：
+
+```yaml
+markdown_text: "# 标题\n\n这是正文内容..."
+templates: "default"  # 使用默认主题
+```
+
+### 工具参数
+
+所有参数定义在 `tools/markdown_to_word.yaml`：
+
+#### 必需参数
+
+- **markdown_text** (string, required): 要转换的 Markdown 内容
+
+#### 可选参数
+
+- **templates** (string, optional): 主题/模板名称，默认 `"default"`
+  - 可选值：`default`, `academic`, `business`, `minimal`, `dark`, `colorful`
+  
+- **font_family** (string, optional): 字体族，默认 `"微软雅黑"`
+  - 常用值：`"微软雅黑"`, `"宋体"`, `"Times New Roman"`, `"Calibri"`, `"Helvetica"`
+  
+- **font_size** (number, optional): 正文字号，默认 `12`
+  - 建议范围：10-18
+  
+- **line_spacing** (number, optional): 行距，默认 `1.5`
+  - 常用值：`1.0`, `1.5`, `2.0`
+  
+- **page_margins** (number, optional): 页边距（厘米），默认 `2.5`
+  - 建议范围：2.0-4.0，四边相同
+  
+- **paper_size** (string, optional): 纸张大小，默认 `"A4"`
+  - 可选值：`"A4"`, `"A3"`, `"Letter"`
+  
+- **output_file** (string, optional): 输出文件名，默认 `"output.docx"`
+  
+- **add_page_numbers** (boolean, optional): 是否添加页码，默认 `true`
+
+### 输出结果
+
+工具会返回两个消息：
+
+1. **文件（BLOB）**：生成的 Word 文档 (.docx)
+   - 出现在工作流结果的 `files` 字段中
+   - 可以直接下载
+   - MIME 类型：`application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+
+2. **JSON 元数据**：包含转换结果摘要
+   ```json
+   {
+     "result": "success",
+     "output_file": "output.docx",
+     "file_size": 12345,
+     "settings": {
+       "template": "default",
+       "font_family": "微软雅黑",
+       "font_size": 12,
+       ...
+     }
+   }
+   ```
+
+## 模板配置详解
+
+### 主题配置文件
+
+主题配置位于 `src/templates/themes/theme_config.yaml`，结构如下：
+
+```yaml
+themes:
+  default:
+    name: "默认主题"
+    description: "适用于系统告警报告、监控报告的正式主题"
+    style_template: "default.yaml"  # 引用的样式模板
+    color_scheme:
+      primary: "#d32f2f"      # 主色调
+      secondary: "#ff9800"    # 次要色
+      accent: "#2196f3"       # 强调色
+      background: "#ffffff"   # 背景色
+      text: "#333333"         # 文本色
+      border: "#424242"       # 边框色
+    
+    # 自定义样式覆盖
+    overrides:
+      fonts:
+        body:
+          name: "微软雅黑"
+          size: 11
+      headings:
+        h1:
+          color: "#1a1a1a"
+          border_color: "#d32f2f"
+      table:
+        header_background: "#f44336"
+        header_font_color: "#ffffff"
+```
+
+### 样式模板文件
+
+样式模板位于 `src/templates/styles/` 目录，定义了详细的样式配置：
+
+```yaml
+# 页面设置
+page:
+  width: 21.0      # cm
+  height: 29.7     # cm
+  margin_top: 2.5  # cm
+  margin_bottom: 2.5
+  margin_left: 3.0
+  margin_right: 2.5
+  orientation: "portrait"
+
+# 字体设置
+fonts:
+  body:
+    name: "宋体"
+    size: 14
+    color: "#000000"
+  
+  heading:
+    name: "宋体"
+    size: 16
+    bold: true
+
+# 段落设置
+paragraph:
+  line_spacing: 28  # 28磅固定值行距
+  space_before: 0
+  space_after: 0
+  alignment: "left"
+
+# 标题样式
+headings:
+  h1:
+    font_size: 22
+    font_name: "宋体"
+    alignment: "center"
+    line_spacing: 1.25
+  
+  h2:
+    font_size: 16
+    font_name: "黑体"
+    bold: true
+
+# 表格样式
+table:
+  border_width: 1.0
+  border_color: "#424242"
+  header_background: "#f44336"
+  header_font_color: "#ffffff"
+  alternate_row_color: "#fff3e0"
+
+# 代码块样式
+code_block:
+  background_color: "#f5f5f5"
+  border_color: "#d32f2f"
+  font_family: "Consolas"
+  font_size: 9
+
+# 更多样式配置...
+```
+
+## 自定义模板
+
+### 创建新主题
+
+1. **编辑主题配置**：在 `src/templates/themes/theme_config.yaml` 中添加新主题：
+
+```yaml
+themes:
+  my_custom_theme:
+    name: "我的自定义主题"
+    description: "适合我的业务场景的主题"
+    style_template: "default.yaml"  # 可以复用现有样式模板
+    color_scheme:
+      primary: "#0066cc"
+      secondary: "#666666"
+      # ...
+    overrides:
+      fonts:
+        body:
+          name: "微软雅黑"
+          size: 12
+      # 其他覆盖设置...
+```
+
+2. **创建新样式模板**（可选）：如果需要全新的样式配置，在 `src/templates/styles/` 目录创建新的 YAML 文件：
+
+```yaml
+# my_custom_style.yaml
+name: "我的自定义样式"
+description: "自定义样式描述"
+version: "1.0.0"
+
+page:
+  # 页面配置...
+
+fonts:
+  # 字体配置...
+
+# 其他样式配置...
+```
+
+3. **使用新主题**：在工具调用时指定主题名称：
+
+```yaml
+templates: "my_custom_theme"
+```
+
+### 主题组合配置
+
+系统支持预定义的主题组合，在 `theme_config.yaml` 中配置：
+
+```yaml
+theme_combinations:
+  combinations:
+    - name: "学术论文"
+      theme: "academic"
+      features:
+        - "toc"           # 目录
+        - "footnotes"     # 脚注
+        - "bibliography"  # 参考文献
+        - "page_numbers"  # 页码
+    
+    - name: "商务报告"
+      theme: "business"
+      features:
+        - "cover_page"    # 封面页
+        - "toc"           # 目录
+        - "header_footer" # 页眉页脚
+        - "page_numbers"  # 页码
+        - "watermark"     # 水印
+```
+
+## 使用示例
+
+### 示例 1：使用默认主题
+
+```yaml
+markdown_text: |
+  # 系统告警报告
+  
+  ## 告警概览
+  
+  本报告包含系统监控告警信息。
+  
+  | 告警级别 | 数量 |
+  |---------|------|
+  | 严重 | 5 |
+  | 警告 | 10 |
+
+templates: "default"
+add_page_numbers: true
+```
+
+### 示例 2：使用学术主题
+
+```yaml
+markdown_text: |
+  # Research Paper Title
+  
+  ## Abstract
+  
+  This paper presents...
+  
+  ## Introduction
+  
+  ...
+
+templates: "academic"
+font_family: "Times New Roman"
+line_spacing: 2.0
+```
+
+### 示例 3：使用商务主题并自定义
+
+```yaml
+markdown_text: |
+  # Business Report
+  
+  ## Executive Summary
+  
+  ...
+
+templates: "business"
+font_size: 11
+page_margins: 2.0
+paper_size: "A4"
+```
+
+## 快速开始
+
+### 环境要求
+
 - Python 3.12+
-- Install dependencies: `pip install -r requirements.txt`
-- A running Dify instance for plugin debugging or installation
+- 依赖安装：`pip install -r requirements.txt`
+- 运行中的 Dify 实例（用于插件调试或安装）
 
-## Getting Started (Debugging)
-1. Copy `.env.example` to `.env` and fill in the required values (remote install URL and key from your Dify server).
-2. Install dependencies: `pip install -r requirements.txt`.
-3. Start the plugin in debug mode: `python -m main`.
-4. In Dify → Plugins, use the debugging connection to test the tool in a workflow.
+### 调试模式
 
-## Tool Parameters
-All parameters are defined in `tools/markdown_to_word.yaml`.
-- markdown_text (string, required): The Markdown content to convert.
-- templates (string, optional): Theme/template name for styling. Default: `default`.
-- font_family (string, optional): Default `"微软雅黑"` (Microsoft YaHei). You can use "SimSun", "Times New Roman", etc.
-- font_size (number, optional): Font size for body text. Default: `12`.
-- line_spacing (number, optional): Line spacing, e.g. `1.0`, `1.5`, `2.0`. Default: `1.5`.
-- page_margins (number, optional): Page margins in centimeters (all sides). Default: `2.5`.
-- paper_size (string, optional): Paper size, e.g. `A4`, `A3`, `Letter`. Default: `A4`.
-- output_file (string, optional): Output file name, e.g. `output.docx`. Default: `output.docx`.
-- add_page_numbers (boolean, optional): Whether to add page numbers. Default: `true`.
+1. 复制 `.env.example` 到 `.env`，填写必要的配置值（Dify 服务器的远程安装 URL 和密钥）
+2. 安装依赖：`pip install -r requirements.txt`
+3. 启动调试模式：`python -m main`
+4. 在 Dify → 插件中，使用调试连接在工作流中测试工具
 
-## Outputs
-The tool streams two messages:
-1) File (BLOB): The generated Word document (.docx). It appears in the workflow result under `files` and can be downloaded.
-2) JSON: A summary payload, including `result`, `output_file`, `file_size`, and the settings used.
+### 查看示例
 
-MIME type for the returned file: `application/vnd.openxmlformats-officedocument.wordprocessingml.document`.
+示例 Markdown 文件位于 `examples/basic/simple_document.md`
 
-## Example Usage
-- Minimal input: provide `markdown_text` with your Markdown content.
-- Optional: tune `font_family`, `font_size`, `line_spacing`, `page_margins`, `paper_size`, `templates`, `add_page_numbers`, `output_file`.
-- See example Markdown in `examples/basic/simple_document.md`.
+## 注意事项与故障排除
 
-Expected result:
-- `files` contains one `.docx` file
-- JSON message indicates success and includes file size and settings
+- 如果 Dify 结果显示空的 `files` 数组，请确保环境使用的是支持文件 BLOB 返回的插件版本（本项目已支持）
+- 非常大的 Markdown 输入可能需要更长的转换时间
+- 自定义主题时，确保 YAML 格式正确，避免语法错误
+- 字体名称需要确保系统已安装对应字体，否则会使用默认字体
+- 样式模板中的颜色值使用十六进制格式（如 `#d32f2f`）
 
-## Notes & Troubleshooting
-- If your Dify result shows an empty `files` array, ensure your environment uses a version of the plugin that returns a file BLOB (this project already does).
-- Very large Markdown inputs may take longer to convert.
-- Customize themes via `src/templates/themes` and integrate them through the `templates` parameter.
+## 模板系统优势
 
-## Privacy
-See `PRIVACY.md` for privacy notes.
+1. **灵活性**：通过主题和样式模板分离，实现高度灵活的样式定制
+2. **可维护性**：样式配置集中管理，易于维护和更新
+3. **可扩展性**：轻松添加新主题和样式模板，无需修改核心代码
+4. **一致性**：通过模板确保文档风格的一致性
+5. **易用性**：预定义主题开箱即用，降低使用门槛
 
+## 隐私说明
 
+详见 `PRIVACY.md` 文件。
 
+## 贡献
+
+欢迎提交 Issue 和 Pull Request 来改进模板系统和功能。

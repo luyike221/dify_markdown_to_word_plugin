@@ -5,25 +5,36 @@ themes:
   # 默认主题
   default:
     name: "默认主题"
-    description: "简洁清爽的默认主题"
+    description: "适用于系统告警报告、监控报告的正式主题"
     style_template: "default.yaml"
     color_scheme:
-      primary: "#000000"
-      secondary: "#666666"
-      accent: "#0066cc"
+      primary: "#d32f2f"
+      secondary: "#ff9800"
+      accent: "#2196f3"
       background: "#ffffff"
-      text: "#000000"
-      border: "#cccccc"
+      text: "#333333"
+      border: "#424242"
     
     # 自定义样式覆盖
     overrides:
       fonts:
         body:
           name: "微软雅黑"
-          size: 12
+          size: 11
+        heading:
+          color: "#1a1a1a"
       headings:
         h1:
-          color: "#000000"
+          color: "#1a1a1a"
+          border_color: "#d32f2f"
+        h2:
+          color: "#d32f2f"
+          border_color: "#ff9800"
+      table:
+        header_background: "#f44336"
+        header_font_color: "#ffffff"
+      link:
+        color: "#d32f2f"
   
   # 学术主题
   academic:
@@ -148,38 +159,6 @@ themes:
         background_color: "#f3e5f5"
         border_color: "#ce93d8"
   
-  # 告警报告主题
-  alert_report:
-    name: "告警报告主题"
-    description: "适用于系统告警报告、监控报告的正式主题"
-    style_template: "alert_report.yaml"
-    color_scheme:
-      primary: "#d32f2f"
-      secondary: "#ff9800"
-      accent: "#2196f3"
-      background: "#ffffff"
-      text: "#333333"
-      border: "#424242"
-    
-    overrides:
-      fonts:
-        body:
-          name: "微软雅黑"
-          size: 11
-        heading:
-          color: "#1a1a1a"
-      headings:
-        h1:
-          color: "#1a1a1a"
-          border_color: "#d32f2f"
-        h2:
-          color: "#d32f2f"
-          border_color: "#ff9800"
-      table:
-        header_background: "#f44336"
-        header_font_color: "#ffffff"
-      link:
-        color: "#d32f2f"
 
 # 主题组合配置
 theme_combinations:
@@ -217,7 +196,7 @@ theme_combinations:
         - "page_numbers"
     
     - name: "告警报告"
-      theme: "alert_report"
+      theme: "default"
       features:
         - "toc"
         - "header_footer"
@@ -256,9 +235,9 @@ application_rules:
     "business": "business"
     "technical": "minimal"
     "general": "default"
-    "alert_report": "alert_report"
-    "monitoring": "alert_report"
-    "system_report": "alert_report"
+    "alert_report": "default"
+    "monitoring": "default"
+    "system_report": "default"
   
   # 自动检测规则
   auto_detection:

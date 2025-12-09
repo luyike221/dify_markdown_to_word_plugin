@@ -98,6 +98,9 @@ class MarkdownParser:
         # 处理图片链接
         text = self._process_images(text)
         
+        # 确保列表前有空行，以便正确解析
+        text = self._ensure_blank_line_before_lists(text)
+        
         return text
     
     def _process_math_formulas(self, text: str) -> str:
@@ -123,6 +126,35 @@ class MarkdownParser:
             return f'<img-placeholder alt="{alt_text}" src="{src}"></img-placeholder>'
         
         return re.sub(image_pattern, replace_image, text)
+    
+    def _ensure_blank_line_before_lists(self, text: str) -> str:
+        """确保列表前有空行，以便正确解析
+        
+        Args:
+            text: Markdown文本
+            
+        Returns:
+            处理后的文本
+        """
+        lines = text.split('\n')
+        result_lines = []
+        
+        for i, line in enumerate(lines):
+            # 检查是否是列表项（有序或无序）
+            is_list_item = (
+                re.match(r'^\s*(\d+\.|\*|\-|\+)\s+', line) is not None
+            )
+            
+            if is_list_item and i > 0:
+                # 检查前一行是否为空行
+                prev_line = lines[i - 1].strip() if i > 0 else ''
+                # 如果前一行不为空且不是列表项，则添加空行
+                if prev_line and not re.match(r'^\s*(\d+\.|\*|\-|\+)\s+', lines[i - 1]):
+                    result_lines.append('')
+            
+            result_lines.append(line)
+        
+        return '\n'.join(result_lines)
     
     def _build_document_tree(self, html_content: str, original_text: str) -> MarkdownElement:
         """构建文档树"""
