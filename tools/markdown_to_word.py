@@ -145,14 +145,23 @@ class MarkdownToWordTool(Tool):
                 else:
                     style_handler.set_theme('default')
                 
+                # 准备WordGenerator配置
+                word_config = {
+                    'enable_charts': True,  # 启用图表生成
+                    'chart_width': 14.0,    # 图表生成宽度（厘米，正常大小）
+                    'chart_insert_width': 7.0,  # 插入Word时的宽度（厘米，缩小一半）
+                    'chart_dpi': 150,        # 图片分辨率（降低到150以提高性能，Word中足够清晰）
+                    'add_chart_title': False # 是否添加图表标题
+                }
+                
                 # 将 StyleHandler 传递给 WordGenerator
-                word_generator = WordGenerator(style_handler=style_handler)
+                word_generator = WordGenerator(config=word_config, style_handler=style_handler)
                 
                 # 解析Markdown
                 parsed_content = markdown_parser.parse(markdown_text)
                 
-                # 生成Word文档
-                success = word_generator.generate(parsed_content, temp_output_path)
+                # 生成Word文档（传入原始markdown_text用于图表识别）
+                success = word_generator.generate(parsed_content, temp_output_path, markdown_text=markdown_text)
                 
                 if success:
                     # 读取生成的文件
