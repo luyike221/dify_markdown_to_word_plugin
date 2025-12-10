@@ -89,6 +89,10 @@ class MarkdownParser:
     
     def _preprocess(self, text: str) -> str:
         """预处理Markdown文本"""
+        # 处理转义的换行符（兼容 \\n 格式）
+        # 将字面上的 \n 转换为真正的换行符
+        text = text.replace('\\n', '\n')
+        
         # 标准化换行符
         text = text.replace('\r\n', '\n').replace('\r', '\n')
         
