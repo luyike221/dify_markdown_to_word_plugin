@@ -403,8 +403,8 @@ class ChartGenerator:
         # 使用提供的颜色或默认颜色
         chart_colors = colors or self.DEFAULT_COLORS
         
-        # 创建图形，高度根据数据项数量自适应
-        height_cm = max(8.0, min(12.0, 6.0 + len(values) * 0.6))
+        # 创建图形，高度根据数据项数量自适应，设置最低高度为12cm以确保美观
+        height_cm = max(12.0, min(16.0, 8.0 + len(values) * 0.8))
         fig, ax = plt.subplots(figsize=(width_cm/2.54, height_cm/2.54), dpi=dpi)
         
         # 绘制柱状图
@@ -414,9 +414,25 @@ class ChartGenerator:
             color=[chart_colors[i % len(chart_colors)] for i in range(len(labels))]
         )
         
-        # 设置x轴标签
+        # 设置标题和字体（使用字体文件路径确保中文显示）
+        from matplotlib.font_manager import FontProperties
+        if self._font_file_path:
+            font_prop = FontProperties(fname=self._font_file_path)
+            plt.title(title, fontsize=14, fontweight='bold', pad=20, fontproperties=font_prop)
+            # 设置y轴标签字体
+            ax.set_ylabel('数值', fontproperties=font_prop, fontsize=12)
+        else:
+            plt.title(title, fontsize=14, fontweight='bold', pad=20)
+            ax.set_ylabel('数值', fontsize=12)
+        
+        # 设置x轴标签（确保中文正常显示）
         ax.set_xticks(range(len(labels)))
-        ax.set_xticklabels(labels, rotation=45, ha='right')
+        if self._font_file_path:
+            # 为每个标签设置字体属性，确保中文正常显示
+            # 使用较小的旋转角度（30度）和更好的对齐方式，避免标签被截断
+            ax.set_xticklabels(labels, rotation=30, ha='right', fontproperties=font_prop, fontsize=10)
+        else:
+            ax.set_xticklabels(labels, rotation=30, ha='right', fontsize=10)
         
         # 计算y轴上限，为数值标签留出空间（增加最大值15%的空间）
         max_value = max(values) if values else 1
@@ -428,32 +444,47 @@ class ChartGenerator:
             height = bar.get_height()
             # 在柱子高度基础上增加3-5%的偏移，确保标签在柱子顶部上方且不被边框遮挡
             label_y = height + max_value * 0.03
-            ax.text(
-                bar.get_x() + bar.get_width() / 2., 
-                label_y,
-                f'{value:.0f}',
-                ha='center', 
-                va='bottom',
-                fontsize=10,
-                fontweight='bold'
-            )
-        
-        # 设置标题（使用字体文件路径确保中文显示）
-        from matplotlib.font_manager import FontProperties
-        if self._font_file_path:
-            font_prop = FontProperties(fname=self._font_file_path)
-            plt.title(title, fontsize=14, fontweight='bold', pad=20, fontproperties=font_prop)
-            # 设置y轴标签字体
-            ax.set_ylabel('数值', fontproperties=font_prop, fontsize=12)
-        else:
-            plt.title(title, fontsize=14, fontweight='bold', pad=20)
-            ax.set_ylabel('数值', fontsize=12)
+            if self._font_file_path:
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2., 
+                    label_y,
+                    f'{value:.0f}',
+                    ha='center', 
+                    va='bottom',
+                    fontsize=10,
+                    fontweight='bold',
+                    fontproperties=font_prop
+                )
+            else:
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2., 
+                    label_y,
+                    f'{value:.0f}',
+                    ha='center', 
+                    va='bottom',
+                    fontsize=10,
+                    fontweight='bold'
+                )
         
         # 设置网格
         ax.grid(axis='y', alpha=0.3, linestyle='--')
         
-        # 调整布局
-        plt.tight_layout()
+        # 调整布局，为旋转的x轴标签留出足够的底部空间
+        # 根据标签数量和长度动态调整底部边距
+        max_label_length = max([len(str(label)) for label in labels]) if labels else 0
+        num_labels = len(labels) if labels else 0
+        # 动态计算底部边距：基础0.35 + 标签长度影响 + 标签数量影响
+        # 旋转30度的中文标签需要足够的底部空间，确保长标签完全可见
+        bottom_margin = max(0.35, 0.30 + max_label_length * 0.03 + num_labels * 0.025)
+        # 先使用 subplots_adjust 设置精确的边距
+        plt.subplots_adjust(
+            bottom=bottom_margin,  # 底部边距
+            top=0.90,              # 顶部边距
+            left=0.12,             # 左边距（为y轴标签留空间）
+            right=0.95             # 右边距
+        )
+        # 然后再使用 tight_layout 进行微调
+        plt.tight_layout(rect=[0, bottom_margin, 1, 0.90])
         
         # 生成临时文件路径
         import uuid
@@ -531,6 +562,13 @@ class ChartGenerator:
         height_cm = 10.0
         fig, ax = plt.subplots(figsize=(width_cm/2.54, height_cm/2.54), dpi=dpi)
         
+        # 设置标题和字体（使用字体文件路径确保中文显示）
+        from matplotlib.font_manager import FontProperties
+        if self._font_file_path:
+            font_prop = FontProperties(fname=self._font_file_path)
+        else:
+            font_prop = None
+        
         # 绘制折线图
         x_positions = range(len(labels))
         line = ax.plot(
@@ -544,9 +582,13 @@ class ChartGenerator:
             label=title
         )
         
-        # 设置x轴标签
+        # 设置x轴标签（确保中文正常显示）
         ax.set_xticks(x_positions)
-        ax.set_xticklabels(labels, rotation=45, ha='right')
+        if font_prop:
+            # 为每个标签设置字体属性，确保中文正常显示
+            ax.set_xticklabels(labels, rotation=45, ha='right', fontproperties=font_prop, fontsize=10)
+        else:
+            ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=10)
         
         # 计算y轴范围，为数值标签留出空间
         min_value = min(values) if values else 0
@@ -557,24 +599,34 @@ class ChartGenerator:
         y_max = max_value + value_range * 0.15
         ax.set_ylim(y_min, y_max)
         
-        # 在数据点上显示数值
+        # 在数据点上显示数值（确保中文字体一致性）
         for i, (x, y, value) in enumerate(zip(x_positions, values, values)):
             # 在数据点上方显示数值
             label_y = y + value_range * 0.03
-            ax.text(
-                x,
-                label_y,
-                f'{value:.0f}' if value == int(value) else f'{value:.1f}',
-                ha='center',
-                va='bottom',
-                fontsize=9,
-                fontweight='bold'
-            )
+            if font_prop:
+                ax.text(
+                    x,
+                    label_y,
+                    f'{value:.0f}' if value == int(value) else f'{value:.1f}',
+                    ha='center',
+                    va='bottom',
+                    fontsize=9,
+                    fontweight='bold',
+                    fontproperties=font_prop
+                )
+            else:
+                ax.text(
+                    x,
+                    label_y,
+                    f'{value:.0f}' if value == int(value) else f'{value:.1f}',
+                    ha='center',
+                    va='bottom',
+                    fontsize=9,
+                    fontweight='bold'
+                )
         
-        # 设置标题（使用字体文件路径确保中文显示）
-        from matplotlib.font_manager import FontProperties
-        if self._font_file_path:
-            font_prop = FontProperties(fname=self._font_file_path)
+        # 设置标题和轴标签（使用字体文件路径确保中文显示）
+        if font_prop:
             plt.title(title, fontsize=14, fontweight='bold', pad=20, fontproperties=font_prop)
             # 设置y轴标签字体
             ax.set_ylabel('数值', fontproperties=font_prop, fontsize=12)
@@ -588,8 +640,12 @@ class ChartGenerator:
         ax.grid(axis='y', alpha=0.3, linestyle='--')
         ax.grid(axis='x', alpha=0.2, linestyle='--')
         
-        # 调整布局
-        plt.tight_layout()
+        # 调整布局，为旋转的x轴标签留出足够的底部空间
+        max_label_length = max([len(str(label)) for label in labels]) if labels else 0
+        num_labels = len(labels) if labels else 0
+        # 动态计算底部边距：基础0.15 + 标签长度影响 + 标签数量影响
+        bottom_margin = max(0.2, 0.15 + max_label_length * 0.015 + num_labels * 0.01)
+        plt.tight_layout(rect=[0, bottom_margin, 1, 0.95])  # 增加底部边距，避免标签被截断
         
         # 生成临时文件路径
         import uuid
