@@ -366,6 +366,269 @@ class ChartGenerator:
         print(f"图片保存完成: {filepath}")
         return filepath
     
+    def generate_bar_chart(
+        self, 
+        title: str, 
+        data: Dict[str, float], 
+        colors: Optional[List[str]] = None,
+        width_cm: float = 14.0,
+        dpi: int = 300
+    ) -> str:
+        """生成柱状图
+        
+        Args:
+            title: 图表标题
+            data: 数据字典，格式：{"标签": 数值}
+            colors: 颜色列表，如果不提供则使用默认配色
+            width_cm: 图片宽度（厘米）
+            dpi: 图片分辨率
+            
+        Returns:
+            生成的图片文件路径
+        """
+        if not data or len(data) == 0:
+            raise ValueError("数据不能为空")
+        
+        # 准备数据
+        labels = list(data.keys())
+        values = list(data.values())
+        
+        # 确保数值为正数
+        values = [max(0, float(v)) for v in values]
+        
+        # 如果所有数值为0，返回错误
+        if sum(values) == 0:
+            raise ValueError("所有数据值不能为0")
+        
+        # 使用提供的颜色或默认颜色
+        chart_colors = colors or self.DEFAULT_COLORS
+        
+        # 创建图形，高度根据数据项数量自适应
+        height_cm = max(8.0, min(12.0, 6.0 + len(values) * 0.6))
+        fig, ax = plt.subplots(figsize=(width_cm/2.54, height_cm/2.54), dpi=dpi)
+        
+        # 绘制柱状图
+        bars = ax.bar(
+            range(len(labels)),
+            values,
+            color=[chart_colors[i % len(chart_colors)] for i in range(len(labels))]
+        )
+        
+        # 设置x轴标签
+        ax.set_xticks(range(len(labels)))
+        ax.set_xticklabels(labels, rotation=45, ha='right')
+        
+        # 计算y轴上限，为数值标签留出空间（增加最大值15%的空间）
+        max_value = max(values) if values else 1
+        y_max = max_value * 1.15
+        ax.set_ylim(0, y_max)
+        
+        # 在柱状图上显示数值（位置在柱子顶部上方，避免被边框遮挡）
+        for i, (bar, value) in enumerate(zip(bars, values)):
+            height = bar.get_height()
+            # 在柱子高度基础上增加3-5%的偏移，确保标签在柱子顶部上方且不被边框遮挡
+            label_y = height + max_value * 0.03
+            ax.text(
+                bar.get_x() + bar.get_width() / 2., 
+                label_y,
+                f'{value:.0f}',
+                ha='center', 
+                va='bottom',
+                fontsize=10,
+                fontweight='bold'
+            )
+        
+        # 设置标题（使用字体文件路径确保中文显示）
+        from matplotlib.font_manager import FontProperties
+        if self._font_file_path:
+            font_prop = FontProperties(fname=self._font_file_path)
+            plt.title(title, fontsize=14, fontweight='bold', pad=20, fontproperties=font_prop)
+            # 设置y轴标签字体
+            ax.set_ylabel('数值', fontproperties=font_prop, fontsize=12)
+        else:
+            plt.title(title, fontsize=14, fontweight='bold', pad=20)
+            ax.set_ylabel('数值', fontsize=12)
+        
+        # 设置网格
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
+        
+        # 调整布局
+        plt.tight_layout()
+        
+        # 生成临时文件路径
+        import uuid
+        filename = f"chart_{uuid.uuid4().hex[:8]}.png"
+        filepath = os.path.join(self.output_dir, filename)
+        
+        # 保存图片
+        print(f"正在保存图片到: {filepath}, DPI: {dpi}")
+        plt.savefig(
+            filepath,
+            dpi=dpi,
+            bbox_inches='tight',
+            facecolor='white',
+            transparent=False
+        )
+        
+        # 关闭图形以释放内存
+        plt.close(fig)
+        
+        # 优化图片文件大小（压缩PNG）
+        try:
+            img = Image.open(filepath)
+            # 如果图片太大，进行压缩
+            original_size = os.path.getsize(filepath)
+            if original_size > 500 * 1024:  # 如果大于500KB
+                print(f"图片文件较大 ({original_size / 1024:.2f} KB)，进行压缩...")
+                # 使用PIL重新保存以压缩
+                img.save(filepath, 'PNG', optimize=True, compress_level=6)
+                new_size = os.path.getsize(filepath)
+                print(f"压缩完成: {original_size / 1024:.2f} KB -> {new_size / 1024:.2f} KB")
+            else:
+                print(f"图片文件大小: {original_size / 1024:.2f} KB")
+            img.close()
+        except Exception as e:
+            print(f"图片压缩失败（继续使用原图）: {e}")
+        
+        print(f"图片保存完成: {filepath}")
+        return filepath
+    
+    def generate_line_chart(
+        self, 
+        title: str, 
+        data: Dict[str, float], 
+        colors: Optional[List[str]] = None,
+        width_cm: float = 14.0,
+        dpi: int = 300
+    ) -> str:
+        """生成折线图
+        
+        Args:
+            title: 图表标题
+            data: 数据字典，格式：{"标签": 数值}，标签通常为时间或顺序值
+            colors: 颜色列表，如果不提供则使用默认配色
+            width_cm: 图片宽度（厘米）
+            dpi: 图片分辨率
+            
+        Returns:
+            生成的图片文件路径
+        """
+        if not data or len(data) == 0:
+            raise ValueError("数据不能为空")
+        
+        # 准备数据
+        labels = list(data.keys())
+        values = list(data.values())
+        
+        # 确保数值为数字
+        values = [float(v) for v in values]
+        
+        # 使用提供的颜色或默认颜色
+        chart_colors = colors or self.DEFAULT_COLORS
+        line_color = chart_colors[0]  # 折线图通常使用单一颜色
+        
+        # 创建图形，高度固定
+        height_cm = 10.0
+        fig, ax = plt.subplots(figsize=(width_cm/2.54, height_cm/2.54), dpi=dpi)
+        
+        # 绘制折线图
+        x_positions = range(len(labels))
+        line = ax.plot(
+            x_positions,
+            values,
+            marker='o',  # 在数据点处显示圆点
+            linestyle='-',  # 实线
+            linewidth=2,
+            markersize=6,
+            color=line_color,
+            label=title
+        )
+        
+        # 设置x轴标签
+        ax.set_xticks(x_positions)
+        ax.set_xticklabels(labels, rotation=45, ha='right')
+        
+        # 计算y轴范围，为数值标签留出空间
+        min_value = min(values) if values else 0
+        max_value = max(values) if values else 1
+        value_range = max_value - min_value if max_value != min_value else max_value or 1
+        # 为y轴留出上下边距
+        y_min = min_value - value_range * 0.1
+        y_max = max_value + value_range * 0.15
+        ax.set_ylim(y_min, y_max)
+        
+        # 在数据点上显示数值
+        for i, (x, y, value) in enumerate(zip(x_positions, values, values)):
+            # 在数据点上方显示数值
+            label_y = y + value_range * 0.03
+            ax.text(
+                x,
+                label_y,
+                f'{value:.0f}' if value == int(value) else f'{value:.1f}',
+                ha='center',
+                va='bottom',
+                fontsize=9,
+                fontweight='bold'
+            )
+        
+        # 设置标题（使用字体文件路径确保中文显示）
+        from matplotlib.font_manager import FontProperties
+        if self._font_file_path:
+            font_prop = FontProperties(fname=self._font_file_path)
+            plt.title(title, fontsize=14, fontweight='bold', pad=20, fontproperties=font_prop)
+            # 设置y轴标签字体
+            ax.set_ylabel('数值', fontproperties=font_prop, fontsize=12)
+            ax.set_xlabel('', fontproperties=font_prop, fontsize=12)
+        else:
+            plt.title(title, fontsize=14, fontweight='bold', pad=20)
+            ax.set_ylabel('数值', fontsize=12)
+            ax.set_xlabel('', fontsize=12)
+        
+        # 设置网格
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
+        ax.grid(axis='x', alpha=0.2, linestyle='--')
+        
+        # 调整布局
+        plt.tight_layout()
+        
+        # 生成临时文件路径
+        import uuid
+        filename = f"chart_{uuid.uuid4().hex[:8]}.png"
+        filepath = os.path.join(self.output_dir, filename)
+        
+        # 保存图片
+        print(f"正在保存图片到: {filepath}, DPI: {dpi}")
+        plt.savefig(
+            filepath,
+            dpi=dpi,
+            bbox_inches='tight',
+            facecolor='white',
+            transparent=False
+        )
+        
+        # 关闭图形以释放内存
+        plt.close(fig)
+        
+        # 优化图片文件大小（压缩PNG）
+        try:
+            img = Image.open(filepath)
+            # 如果图片太大，进行压缩
+            original_size = os.path.getsize(filepath)
+            if original_size > 500 * 1024:  # 如果大于500KB
+                print(f"图片文件较大 ({original_size / 1024:.2f} KB)，进行压缩...")
+                # 使用PIL重新保存以压缩
+                img.save(filepath, 'PNG', optimize=True, compress_level=6)
+                new_size = os.path.getsize(filepath)
+                print(f"压缩完成: {original_size / 1024:.2f} KB -> {new_size / 1024:.2f} KB")
+            else:
+                print(f"图片文件大小: {original_size / 1024:.2f} KB")
+            img.close()
+        except Exception as e:
+            print(f"图片压缩失败（继续使用原图）: {e}")
+        
+        print(f"图片保存完成: {filepath}")
+        return filepath
+    
     def cleanup(self, filepath: str):
         """清理临时图片文件
         

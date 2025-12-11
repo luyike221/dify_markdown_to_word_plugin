@@ -35,6 +35,9 @@ class MarkdownToWordTool(Tool):
             page_margins = tool_parameters.get('page_margins', 2.5)
             paper_size = tool_parameters.get('paper_size', 'A4')
             add_page_numbers = tool_parameters.get('add_page_numbers', True)
+            enable_charts = tool_parameters.get('enable_charts', False)
+            chart_data = tool_parameters.get('chart_data', '')
+            chart_insert_width = tool_parameters.get('chart_insert_width', 14.0)
             
 
             if not markdown_text:
@@ -147,11 +150,12 @@ class MarkdownToWordTool(Tool):
                 
                 # 准备WordGenerator配置
                 word_config = {
-                    'enable_charts': True,  # 启用图表生成
+                    'enable_charts': enable_charts,  # 启用图表生成（从参数读取）
                     'chart_width': 14.0,    # 图表生成宽度（厘米，正常大小）
-                    'chart_insert_width': 7.0,  # 插入Word时的宽度（厘米，缩小一半）
+                    'chart_insert_width': chart_insert_width,  # 插入Word时的宽度（厘米，从参数读取，默认14.0）
                     'chart_dpi': 150,        # 图片分辨率（降低到150以提高性能，Word中足够清晰）
-                    'add_chart_title': False # 是否添加图表标题
+                    'add_chart_title': False, # 是否添加图表标题
+                    'chart_data': chart_data # 图表数据源
                 }
                 
                 # 将 StyleHandler 传递给 WordGenerator

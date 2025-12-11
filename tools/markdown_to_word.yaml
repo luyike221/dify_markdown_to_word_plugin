@@ -126,6 +126,50 @@ parameters:
     llm_description: "Output file name for the generated document"
     form: form
   
+  - name: enable_charts
+    type: boolean
+    required: false
+    label:
+      en_US: enable charts
+      zh_Hans: 启用图表生成
+      pt_BR: habilitar gráficos
+    human_description:
+      en_US: "Enable automatic chart generation from data in markdown"
+      zh_Hans: "启用从Markdown数据自动生成图表"
+      pt_BR: "Habilitar geração automática de gráficos a partir de dados no markdown"
+    llm_description: "Enable automatic chart generation from data in markdown"
+    form: form
+    default: false
+  
+  - name: chart_data
+    type: string
+    required: false
+    label:
+      en_US: Chart Data (JSON)
+      zh_Hans: 图表数据（JSON格式）
+      pt_BR: Dados do Gráfico (JSON)
+    human_description:
+      en_US: "Processed chart data in JSON format. Expected format: {\"charts\": [{\"type\": \"pie\"|\"bar\", \"title\": \"...\", \"position\": \"after:...\", \"data\": {...}}]}"
+      zh_Hans: "已处理好的图表数据（JSON格式）。期望格式：{\"charts\": [{\"type\": \"pie\"|\"bar\", \"title\": \"...\", \"position\": \"after:...\", \"data\": {...}}]}"
+      pt_BR: "Dados do gráfico processados em formato JSON. Formato esperado: {\"charts\": [{\"type\": \"pie\"|\"bar\", \"title\": \"...\", \"position\": \"after:...\", \"data\": {...}}]}"
+    llm_description: "Processed chart data in JSON format. Must be a valid JSON string containing charts array with type, title, position, and data fields."
+    form: llm
+  
+  - name: chart_insert_width
+    type: number
+    required: false
+    label:
+      en_US: Chart Insert Width (cm)
+      zh_Hans: 图表插入宽度（厘米）
+      pt_BR: Largura de Inserção do Gráfico (cm)
+    human_description:
+      en_US: "Width of chart when inserted into Word document (in centimeters). Default is 14.0 cm."
+      zh_Hans: "图表插入Word文档时的宽度（厘米）。默认值为14.0厘米。"
+      pt_BR: "Largura do gráfico quando inserido no documento Word (em centímetros). O padrão é 14.0 cm."
+    llm_description: "Width of chart when inserted into Word document in centimeters. Default is 14.0 cm."
+    form: form
+    default: 14.0
+  
 extra:
   python:
     source: tools/markdown_to_word.py

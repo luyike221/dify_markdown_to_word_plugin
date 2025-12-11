@@ -80,11 +80,12 @@ class WordGenerator:
         self.styles = self._setup_styles()
         
         # 图表相关配置
-        self.enable_charts = self.config.get('enable_charts', True)
+        self.enable_charts = self.config.get('enable_charts', False)
         self.chart_data = []  # 存储识别的图表数据
         self.chart_images = {}  # 存储生成的图片路径 {position: image_path}
         self.chart_generator = None
         self.temp_image_files = []  # 临时图片文件列表，用于清理
+        self.chart_data_source = self.config.get('chart_data', '')  # 图表数据源
         
     def _create_document(self) -> Document:
         """创建Word文档"""
@@ -193,6 +194,11 @@ class WordGenerator:
             
             # 处理文档内容
             self._process_element(markdown_element)
+            
+            # 处理未插入的图表（插入到文档末尾）
+            if self.chart_images:
+                print(f"文档处理完成，检查未插入的图表: 剩余 {len(self.chart_images)} 个图表")
+            self._insert_remaining_charts()
             
             # 保存文档
             self.document.save(output_path)
@@ -327,6 +333,27 @@ class WordGenerator:
             for nested_list in nested_lists:
                 self._process_html_list(nested_list, indent_level + 1)
     
+    def _set_cell_vertical_alignment(self, cell, alignment='center'):
+        """设置单元格垂直对齐方式
+        
+        Args:
+            cell: Word表格单元格对象
+            alignment: 对齐方式，可选值：'top', 'center', 'bottom'，默认为'center'
+        """
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+        
+        # 查找或创建vAlign元素
+        vAlign_elements = tcPr.findall(qn('w:vAlign'))
+        if vAlign_elements:
+            vAlign = vAlign_elements[0]
+        else:
+            vAlign = OxmlElement('w:vAlign')
+            tcPr.append(vAlign)
+        
+        # 设置垂直对齐方式
+        vAlign.set(qn('w:val'), alignment)
+    
     def _set_cell_background(self, cell, rgb_color):
         """设置单元格背景色
         
@@ -425,11 +452,7 @@ class WordGenerator:
                 start_cell.text = cell_value
                 
                 # 设置垂直居中对齐
-                tc = start_cell._tc
-                tcPr = tc.get_or_add_tcPr()
-                vAlign = OxmlElement('w:vAlign')
-                vAlign.set(qn('w:val'), 'center')
-                tcPr.append(vAlign)
+                self._set_cell_vertical_alignment(start_cell, 'center')
                 
                 # 确保合并后的单元格内容水平居中，并设置字体样式
                 for paragraph in start_cell.paragraphs:
@@ -482,7 +505,7 @@ class WordGenerator:
                     word_cell = table.cell(i, j)
                     word_cell.text = cell.get_text().strip()
                     
-                    # 设置单元格对齐方式为居中
+                    # 设置单元格水平对齐方式为居中
                     for paragraph in word_cell.paragraphs:
                         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                         
@@ -490,6 +513,9 @@ class WordGenerator:
                         for run in paragraph.runs:
                             run.font.name = '微软雅黑'
                             run.font.size = Pt(9)
+                    
+                    # 设置单元格垂直对齐方式为居中
+                    self._set_cell_vertical_alignment(word_cell, 'center')
         
         # 合并第一列中相同值的单元格
         self._merge_first_column_cells(table)
@@ -706,7 +732,7 @@ class WordGenerator:
                             cell = table.cell(i, j)
                             cell.text = str(cell_data)
                             
-                            # 设置单元格对齐方式为居中
+                            # 设置单元格水平对齐方式为居中
                             for paragraph in cell.paragraphs:
                                 paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                                 
@@ -714,6 +740,9 @@ class WordGenerator:
                                 for run in paragraph.runs:
                                     run.font.name = '微软雅黑'
                                     run.font.size = Pt(9)
+                            
+                            # 设置单元格垂直对齐方式为居中
+                            self._set_cell_vertical_alignment(cell, 'center')
             
             # 合并第一列中相同值的单元格
             self._merge_first_column_cells(table)
@@ -1180,10 +1209,10 @@ class WordGenerator:
             print("初始化图表生成器...")
             self.chart_generator = ChartGenerator()
             
-            # 识别图表数据
-            print("调用LLM识别图表数据...")
-            self.chart_data = recognizer.recognize(markdown_text)
-            print(f"识别到 {len(self.chart_data)} 个图表")
+            # 解析图表数据
+            print("解析图表数据...")
+            self.chart_data = recognizer.recognize(self.chart_data_source)
+            print(f"解析到 {len(self.chart_data)} 个图表")
             
             if not self.chart_data:
                 print("未识别到图表数据")
@@ -1195,17 +1224,36 @@ class WordGenerator:
                     position = chart.get('position', '')
                     title = chart.get('title', '图表')
                     data = chart.get('data', {})
+                    chart_type = chart.get('type', 'pie')
                     
-                    print(f"生成图表 {i+1}/{len(self.chart_data)}: {title}, position: {position}")
+                    print(f"生成图表 {i+1}/{len(self.chart_data)}: {title}, 类型: {chart_type}, position: {position}")
                     print(f"数据: {data}")
                     
-                    # 生成饼图
-                    image_path = self.chart_generator.generate_pie_chart(
-                        title=title,
-                        data=data,
-                        width_cm=self.config.get('chart_width', 14.0),
-                        dpi=self.config.get('chart_dpi', 300)
-                    )
+                    # 根据图表类型生成不同的图表
+                    if chart_type == 'bar':
+                        # 生成柱状图
+                        image_path = self.chart_generator.generate_bar_chart(
+                            title=title,
+                            data=data,
+                            width_cm=self.config.get('chart_width', 14.0),
+                            dpi=self.config.get('chart_dpi', 300)
+                        )
+                    elif chart_type == 'line':
+                        # 生成折线图
+                        image_path = self.chart_generator.generate_line_chart(
+                            title=title,
+                            data=data,
+                            width_cm=self.config.get('chart_width', 14.0),
+                            dpi=self.config.get('chart_dpi', 300)
+                        )
+                    else:
+                        # 默认生成饼图
+                        image_path = self.chart_generator.generate_pie_chart(
+                            title=title,
+                            data=data,
+                            width_cm=self.config.get('chart_width', 14.0),
+                            dpi=self.config.get('chart_dpi', 300)
+                        )
                     
                     print(f"图表生成成功: {image_path}")
                     
@@ -1220,6 +1268,8 @@ class WordGenerator:
                     continue
             
             print(f"图表准备完成，共生成 {len(self.chart_images)} 个图表")
+            if self.chart_images:
+                print(f"已生成的图表位置列表: {list(self.chart_images.keys())[:3]}...")  # 只打印前3个
                     
         except ValueError as e:
             print(f"图表识别器初始化失败（可能是API Key未设置）: {e}")
@@ -1231,6 +1281,43 @@ class WordGenerator:
             traceback.print_exc()
             self.chart_data = []
             self.chart_images = {}
+    
+    def _split_paragraph_by_punctuation(self, text: str) -> List[str]:
+        """使用标点符号分割段落
+        
+        Args:
+            text: 段落文本
+            
+        Returns:
+            分割后的文本片段列表（每个片段包含标点符号）
+        """
+        import re
+        # 标点符号：，。；：！？、
+        # 使用正则表达式按标点符号分割，保留分隔符
+        # 匹配标点符号（，。；：！？、）
+        pattern = r'([，。；：！？、])'
+        
+        # 分割文本，保留分隔符
+        parts = re.split(pattern, text)
+        
+        # 合并文本和标点符号
+        segments = []
+        i = 0
+        while i < len(parts):
+            if i < len(parts) - 1 and parts[i + 1] in ['，', '。', '；', '：', '！', '？', '、']:
+                # 文本 + 标点符号
+                segment = parts[i] + parts[i + 1]
+                if segment.strip():
+                    segments.append(segment.strip())
+                i += 2
+            else:
+                # 只有文本，没有后续标点
+                if parts[i].strip():
+                    segments.append(parts[i].strip())
+                i += 1
+        
+        # 如果没有分割出片段，返回原文本
+        return segments if segments else [text]
     
     def _check_and_insert_chart(self, paragraph, paragraph_text: str):
         """检查段落文本，如果匹配position则插入图表
@@ -1244,17 +1331,51 @@ class WordGenerator:
         
         # 遍历所有图表，检查position是否匹配
         for position, image_path in list(self.chart_images.items()):
-            if not position.startswith('after:'):
+            # 检查是否是 after 或 before 模式
+            is_after = position.startswith('after:')
+            is_before = position.startswith('before:')
+            
+            if not (is_after or is_before):
                 continue
             
             # 提取段落文本（完整段落）
-            paragraph_keyword = position.replace('after:', '').strip()
+            if is_after:
+                paragraph_keyword = position.replace('after:', '').strip()
+            else:
+                paragraph_keyword = position.replace('before:', '').strip()
             
-            # 匹配策略：完整段落匹配（段落文本必须完全包含在paragraph_text中）
-            # 使用in操作符检查段落文本是否在段落中
+            # 匹配策略1：完整段落匹配（段落文本必须完全包含在paragraph_text中）
+            matched = False
+            match_mode = "full"  # "full" 或 "segment"
+            
             if paragraph_keyword in paragraph_text:
-                print(f"匹配到图表插入位置: 段落文本长度={len(paragraph_keyword)}, 匹配位置='{paragraph_keyword[:80]}...'")
+                matched = True
+                match_mode = "full"
+                print(f"完整段落匹配成功: 段落文本长度={len(paragraph_keyword)}, 匹配位置='{paragraph_keyword[:80]}...'")
+            else:
+                # 匹配策略2：分段匹配（使用标点符号分割段落）
+                print(f"完整段落匹配失败，尝试分段匹配...")
+                segments = self._split_paragraph_by_punctuation(paragraph_text)
+                print(f"段落分割为 {len(segments)} 个片段")
+                
+                # 检查关键词是否在任何一个片段中
+                for segment in segments:
+                    if paragraph_keyword in segment:
+                        matched = True
+                        match_mode = "segment"
+                        print(f"分段匹配成功: 在片段中找到关键词，片段='{segment[:80]}...'")
+                        break
+                
+                if not matched:
+                    print(f"分段匹配也失败，跳过此图表: position='{position[:80]}...'")
+            
+            # 如果匹配成功，插入图表
+            if matched:
+                mode = "after" if is_after else "before"
+                match_info = f"({mode}模式, {match_mode}匹配)"
+                print(f"匹配到图表插入位置 {match_info}: 段落文本长度={len(paragraph_keyword)}, 匹配位置='{paragraph_keyword[:80]}...'")
                 # 找到匹配，插入图表
+                # 注意：无论完整匹配还是分段匹配，都插入到完整段落的前后，而不是片段位置
                 try:
                     print(f"开始插入图表: {image_path}")
                     
@@ -1269,27 +1390,51 @@ class WordGenerator:
                     file_size = os.path.getsize(image_path)
                     print(f"图片文件大小: {file_size / 1024:.2f} KB")
                     
-                    # 在段落后插入新段落，添加图片
-                    image_paragraph = self.document.add_paragraph()
+                    # 使用底层API插入段落
+                    from docx.oxml import parse_xml
+                    from docx.text.paragraph import Paragraph
+                    
+                    # 创建新的段落元素
+                    p_xml = '<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>'
+                    new_p = parse_xml(p_xml)
+                    
+                    if is_after:
+                        # after模式：在当前段落后插入新段落
+                        paragraph._element.addnext(new_p)
+                    else:
+                        # before模式：在当前段落前插入新段落
+                        paragraph._element.addprevious(new_p)
+                    
+                    # 从新插入的元素创建段落对象
+                    image_paragraph = Paragraph(new_p, paragraph._parent)
                     image_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     
                     run = image_paragraph.add_run()
                     print(f"正在添加图片到Word文档（这可能需要几秒钟）...")
                     import time
                     start_time = time.time()
-                    # 插入Word时使用缩小后的宽度（如果配置了chart_insert_width则使用，否则使用chart_width的一半）
-                    insert_width = self.config.get('chart_insert_width')
-                    if insert_width is None:
-                        # 如果没有配置chart_insert_width，则使用chart_width的一半
-                        insert_width = self.config.get('chart_width', 14.0) / 2.0
+                    # 插入Word时使用配置的宽度（默认14.0厘米）
+                    insert_width = self.config.get('chart_insert_width', 14.0)
                     run.add_picture(image_path, width=Cm(insert_width))
                     elapsed_time = time.time() - start_time
-                    print(f"成功插入图表: {image_path} (宽度: {insert_width}cm, 耗时: {elapsed_time:.2f}秒)")
+                    print(f"成功插入图表 ({mode}模式): {image_path} (宽度: {insert_width}cm, 耗时: {elapsed_time:.2f}秒)")
                     
                     # 可选：添加图表标题
                     if self.config.get('add_chart_title', False):
-                        title_para = self.document.add_paragraph()
-                        title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        # 创建标题段落
+                        title_p_xml = '<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>'
+                        title_new_p = parse_xml(title_p_xml)
+                        
+                        if is_after:
+                            # after模式：在图片段落后插入标题
+                            new_p.addnext(title_new_p)
+                        else:
+                            # before模式：在图片段落前插入标题（标题在图片上方）
+                            new_p.addprevious(title_new_p)
+                        
+                        title_paragraph = Paragraph(title_new_p, paragraph._parent)
+                        title_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        
                         # 从chart_data中找到对应的标题
                         chart_title = None
                         for chart in self.chart_data:
@@ -1297,7 +1442,7 @@ class WordGenerator:
                                 chart_title = chart.get('title', '')
                                 break
                         if chart_title:
-                            title_run = title_para.add_run(f"图: {chart_title}")
+                            title_run = title_paragraph.add_run(f"图: {chart_title}")
                             title_run.font.size = Pt(10)
                     
                     # 从字典中移除，避免重复插入
@@ -1308,9 +1453,73 @@ class WordGenerator:
                     print(f"插入图表失败 {position}: {e}")
                     import traceback
                     traceback.print_exc()
-                    # 即使失败也移除，避免重复尝试
-                    if position in self.chart_images:
-                        del self.chart_images[position]
+                    # 插入失败时不移除，保留在列表中，稍后在文档末尾尝试插入
+                    print(f"图表插入失败，将保留在列表中，稍后在文档末尾尝试插入")
+    
+    def _insert_remaining_charts(self):
+        """将未插入的图表插入到文档末尾"""
+        if not self.chart_images:
+            print("没有未插入的图表")
+            return
+        
+        print(f"检测到 {len(self.chart_images)} 个图表未找到匹配段落，将插入到文档末尾")
+        print(f"未插入的图表列表: {list(self.chart_images.keys())}")
+        
+        # 遍历所有未插入的图表
+        for position, image_path in list(self.chart_images.items()):
+            try:
+                print(f"开始插入未匹配的图表到文档末尾: position={position[:100]}..., image_path={image_path}")
+                
+                # 检查文件是否存在
+                import os
+                if not os.path.exists(image_path):
+                    print(f"错误: 图片文件不存在: {image_path}")
+                    del self.chart_images[position]
+                    continue
+                
+                # 获取文件大小
+                file_size = os.path.getsize(image_path)
+                print(f"图片文件大小: {file_size / 1024:.2f} KB")
+                
+                # 在文档末尾插入新段落，添加图片
+                image_paragraph = self.document.add_paragraph()
+                image_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                
+                run = image_paragraph.add_run()
+                print(f"正在添加图片到Word文档末尾（这可能需要几秒钟）...")
+                import time
+                start_time = time.time()
+                # 插入Word时使用配置的宽度（默认14.0厘米）
+                insert_width = self.config.get('chart_insert_width', 14.0)
+                run.add_picture(image_path, width=Cm(insert_width))
+                elapsed_time = time.time() - start_time
+                print(f"成功插入图表到文档末尾: {image_path} (宽度: {insert_width}cm, 耗时: {elapsed_time:.2f}秒)")
+                
+                # 可选：添加图表标题
+                if self.config.get('add_chart_title', False):
+                    title_para = self.document.add_paragraph()
+                    title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    # 从chart_data中找到对应的标题
+                    chart_title = None
+                    for chart in self.chart_data:
+                        if chart.get('position') == position:
+                            chart_title = chart.get('title', '')
+                            break
+                    if chart_title:
+                        title_run = title_para.add_run(f"图: {chart_title}")
+                        title_run.font.size = Pt(10)
+                
+                # 从字典中移除
+                del self.chart_images[position]
+                print(f"图表已插入到文档末尾并从待插入列表移除，剩余 {len(self.chart_images)} 个图表待插入")
+                
+            except Exception as e:
+                print(f"插入图表到文档末尾失败 {position}: {e}")
+                import traceback
+                traceback.print_exc()
+                # 即使失败也移除，避免重复尝试
+                if position in self.chart_images:
+                    del self.chart_images[position]
     
     def _cleanup_chart_images(self):
         """清理临时图片文件"""
