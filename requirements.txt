@@ -1,4 +1,7 @@
 dify_plugin>0.3.0
-matplotlib
+matplotlib>=3.10.0
 openai
 Pillow
+markdown
+python-docx
+PyYAML
