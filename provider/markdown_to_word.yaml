@@ -1,14 +1,14 @@
 identity:
   author: "luyike"
-  name: "markdown_to_word"
+  name: "smart_doc_generator"
   label:
-    en_US: "markdown_to_word"
-    zh_Hans: "markdown_to_word"
-    pt_BR: "markdown_to_word"
+    en_US: "Smart Doc Generator"
+    zh_Hans: "智能文档生成器"
+    pt_BR: "Gerador de Documentos Inteligente"
   description:
-    en_US: "md"
-    zh_Hans: "md"
-    pt_BR: "md"
+    en_US: "Smart document generator with automatic chart generation from Markdown to Word"
+    zh_Hans: "智能文档生成器，支持从Markdown自动生成图表并转换为Word文档"
+    pt_BR: "Gerador de documentos inteligente com geração automática de gráficos de Markdown para Word"
   icon: "icon.svg"
 
 #########################################################################################

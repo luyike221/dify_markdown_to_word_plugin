@@ -1,16 +1,16 @@
 identity:
-  name: "markdown_to_word"
+  name: "smart_doc_generator"
   author: "luyike"
   label:
-    en_US: "markdown_to_word"
-    zh_Hans: "markdown_to_word"
-    pt_BR: "markdown_to_word"
+    en_US: "Smart Doc Generator"
+    zh_Hans: "智能文档生成器"
+    pt_BR: "Gerador de Documentos Inteligente"
 description:
   human:
-    en_US: "md"
-    zh_Hans: "md"
-    pt_BR: "md"
-  llm: "md"
+    en_US: "Convert Markdown to Word document with automatic chart generation (pie, bar, line charts)"
+    zh_Hans: "将Markdown转换为Word文档，支持自动生成图表（饼图、柱状图、折线图）"
+    pt_BR: "Converter Markdown para documento Word com geração automática de gráficos (pizza, barras, linhas)"
+  llm: "Convert Markdown to Word document with automatic chart generation. Supports pie charts, bar charts, and line charts based on data analysis."
 parameters:
   - name: markdown_text
     type: string

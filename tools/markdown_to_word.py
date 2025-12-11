@@ -23,7 +23,7 @@ from utils.config import ConfigManager, StyleConfig, FontConfig, PageConfig
 from utils.file_handler import FileHandler
 
 
-class MarkdownToWordTool(Tool):
+class SmartDocGeneratorTool(Tool):
     def _invoke(self, tool_parameters: dict[str, Any]) -> Generator[ToolInvokeMessage]:
         try:
             # 提取参数

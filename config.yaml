@@ -175,7 +175,7 @@ network:
   retry_delay: 1
   
   # User-Agent
-  user_agent: "MarkdownToWordConverter/1.0.0"
+  user_agent: "SmartDocGenerator/1.0.0"
   
   # 代理设置（可选）
   proxy:

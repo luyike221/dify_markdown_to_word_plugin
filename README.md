@@ -1,6 +1,6 @@
-# Markdown to Word (Dify Plugin)
+# Smart Doc Generator (Dify Plugin)
 
-一个强大的 Markdown 转 Word 文档转换工具，支持灵活的模板机制，可快速生成符合不同场景需求的格式化 Word 文档。
+一个智能的 Markdown 转 Word 文档生成器，支持自动图表生成（饼图、柱状图、折线图）和灵活的模板机制，可快速生成符合不同场景需求的格式化 Word 文档。
 
 ## 核心特性
 
@@ -20,6 +20,7 @@
 ### 其他特性
 
 - ✅ Markdown → Word (.docx) 转换
+- ✅ **智能图表生成**：自动识别数据并生成饼图、柱状图、折线图
 - ✅ 可配置的字体、字号、行距、页边距等
 - ✅ 支持页码、页眉页脚
 - ✅ 返回文档文件和 JSON 元数据

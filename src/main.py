@@ -21,8 +21,8 @@ from utils.config import Config
 from utils.file_handler import FileHandler
 
 
-class MarkdownToWordConverter:
-    """Markdown到Word转换器主类"""
+class SmartDocConverter:
+    """智能文档生成器主类"""
     
     def __init__(self, config_path: Optional[str] = None, style_config_path: Optional[str] = None):
         """初始化转换器
@@ -245,7 +245,7 @@ def main():
     args = parser.parse_args()
     
     # 创建转换器实例
-    converter = MarkdownToWordConverter(
+    converter = SmartDocConverter(
         config_path=args.config,
         style_config_path=args.style_config
     )

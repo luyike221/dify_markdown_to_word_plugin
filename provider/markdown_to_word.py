@@ -4,7 +4,7 @@ from dify_plugin import ToolProvider
 from dify_plugin.errors.tool import ToolProviderCredentialValidationError
 
 
-class MarkdownToWordProvider(ToolProvider):
+class SmartDocGeneratorProvider(ToolProvider):
     
     def _validate_credentials(self, credentials: dict[str, Any]) -> None:
         try:
@@ -22,7 +22,7 @@ class MarkdownToWordProvider(ToolProvider):
     #########################################################################################
     # def _oauth_get_authorization_url(self, redirect_uri: str, system_credentials: Mapping[str, Any]) -> str:
     #     """
-    #     Generate the authorization URL for markdown_to_word OAuth.
+    #     Generate the authorization URL for smart_doc_generator OAuth.
     #     """
     #     try:
     #         """
