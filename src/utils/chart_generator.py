@@ -8,6 +8,7 @@
 import os
 import tempfile
 from typing import Dict, List, Optional
+import numpy as np
 import matplotlib
 # 在 Docker 环境中使用无界面后端
 matplotlib.use('Agg')
@@ -278,24 +279,118 @@ class ChartGenerator:
         height_cm = max(8.0, min(12.0, 6.0 + len(sizes) * 0.5))
         fig, ax = plt.subplots(figsize=(width_cm/2.54, height_cm/2.54), dpi=dpi)
         
-        # 绘制饼图
-        wedges, texts, autotexts = ax.pie(
-            sizes,
-            labels=None,  # 不显示标签在图上
-            colors=chart_colors,
-            autopct='%1.0f%%',  # 显示百分比，不带小数
-            startangle=90,
-            textprops={'fontsize': 10, 'weight': 'bold', 'color': 'white'}  # 百分比文字样式
-        )
+        # 计算百分比
+        total = sum(sizes)
+        percentages = [s / total * 100 for s in sizes]
         
-        # 设置百分比文字背景为黑色矩形
-        for autotext in autotexts:
-            autotext.set_bbox(dict(
-                boxstyle='round,pad=0.3', 
-                facecolor='black', 
-                edgecolor='none', 
-                alpha=0.7
-            ))
+        # 检查是否有小于8%的分块
+        has_small_slices = any(pct < 8 for pct in percentages)
+        
+        if not has_small_slices:
+            # 如果所有分块都大于等于8%，使用均匀分布（autopct自动标注）
+            wedges, texts, autotexts = ax.pie(
+                sizes,
+                labels=None,  # 不显示标签在图上
+                colors=chart_colors,
+                autopct='%1.0f%%',  # 显示百分比，不带小数
+                startangle=90,
+                textprops={'fontsize': 10, 'weight': 'bold', 'color': 'white'}  # 百分比文字样式
+            )
+            
+            # 设置百分比文字背景为黑色矩形
+            for autotext in autotexts:
+                autotext.set_bbox(dict(
+                    boxstyle='round,pad=0.3',
+                    facecolor='black',
+                    edgecolor='none',
+                    alpha=0.7
+                ))
+        else:
+            # 如果有小于8%的分块，使用错开标注
+            wedges, texts, _ = ax.pie(
+                sizes,
+                labels=None,  # 不显示标签在图上
+                colors=chart_colors,
+                autopct='',  # 不自动显示百分比
+                startangle=90
+            )
+            
+            # 手动添加百分比标注，根据切片大小决定位置
+            from matplotlib.patches import ConnectionPatch
+            
+            # 获取每个楔形的角度中心
+            for i, (wedge, pct) in enumerate(zip(wedges, percentages)):
+                # 计算楔形的角度中心（弧度）
+                theta1, theta2 = wedge.theta1, wedge.theta2
+                theta_center = np.deg2rad((theta1 + theta2) / 2)
+                
+                # 计算楔形的中心点坐标
+                # 根据切片大小决定标注位置
+                if pct >= 8:
+                    # 大切片（>=8%）：将百分比放在内部，距离圆心较近
+                    # 使用不同的距离避免重叠
+                    distance = 0.6 + (i % 3) * 0.1  # 错开距离：0.6, 0.7, 0.8
+                    x = distance * np.cos(theta_center)
+                    y = distance * np.sin(theta_center)
+                    ha = 'center'
+                    va = 'center'
+                    use_connection = False
+                else:
+                    # 小切片（<8%）：将百分比放在外部，使用引线连接
+                    distance = 1.15 + (i % 2) * 0.1  # 错开距离：1.15, 1.25
+                    x = distance * np.cos(theta_center)
+                    y = distance * np.sin(theta_center)
+                    # 根据角度决定水平对齐方式
+                    if abs(np.cos(theta_center)) > abs(np.sin(theta_center)):
+                        ha = 'left' if np.cos(theta_center) > 0 else 'right'
+                        va = 'center'
+                    else:
+                        ha = 'center'
+                        va = 'bottom' if np.sin(theta_center) > 0 else 'top'
+                    use_connection = True
+                    
+                    # 添加引线（从小切片边缘到标注位置）
+                    # 计算切片边缘点
+                    edge_x = 1.05 * np.cos(theta_center)
+                    edge_y = 1.05 * np.sin(theta_center)
+                    # 创建连接线
+                    con = ConnectionPatch(
+                        (edge_x, edge_y), (x, y), "data", "data",
+                        arrowstyle="-", shrinkA=0, shrinkB=0,
+                        mutation_scale=20, fc="gray", alpha=0.5, linestyle='--'
+                    )
+                    ax.add_patch(con)
+                
+                # 添加百分比文本
+                from matplotlib.font_manager import FontProperties
+                # 根据是否为外部标注决定文字颜色
+                text_color = 'white' if not use_connection else 'black'
+                
+                if self._font_file_path:
+                    font_prop = FontProperties(fname=self._font_file_path)
+                    text = ax.text(
+                        x, y, f'{pct:.0f}%',
+                        ha=ha, va=va,
+                        fontsize=10, weight='bold', color=text_color,
+                        fontproperties=font_prop
+                    )
+                else:
+                    text = ax.text(
+                        x, y, f'{pct:.0f}%',
+                        ha=ha, va=va,
+                        fontsize=10, weight='bold', color=text_color
+                    )
+                
+                # 只为内部标注添加黑色背景，外部标注不添加背景
+                if not use_connection:
+                    # 内部标注（>=8%）：白字黑底
+                    text.set_bbox(dict(
+                        boxstyle='round,pad=0.3',
+                        facecolor='black',
+                        edgecolor='none',
+                        alpha=0.7
+                    ))
+                # 外部标注（<8%）：黑字无背景
         
         # 添加图例在右侧（使用字体文件路径确保中文显示）
         from matplotlib.font_manager import FontProperties
@@ -391,20 +486,13 @@ class ChartGenerator:
         
         # 准备数据
         labels = list(data.keys())
-        values = list(data.values())
-        
-        # 确保数值为正数
-        values = [max(0, float(v)) for v in values]
-        
-        # 如果所有数值为0，返回错误
-        if sum(values) == 0:
-            raise ValueError("所有数据值不能为0")
+        values = [float(v) for v in data.values()]
         
         # 使用提供的颜色或默认颜色
         chart_colors = colors or self.DEFAULT_COLORS
         
-        # 创建图形，高度根据数据项数量自适应，设置最低高度为12cm以确保美观
-        height_cm = max(12.0, min(16.0, 8.0 + len(values) * 0.8))
+        # 创建图形
+        height_cm = 10.0
         fig, ax = plt.subplots(figsize=(width_cm/2.54, height_cm/2.54), dpi=dpi)
         
         # 绘制柱状图
@@ -414,114 +502,66 @@ class ChartGenerator:
             color=[chart_colors[i % len(chart_colors)] for i in range(len(labels))]
         )
         
-        # 设置标题和字体（使用字体文件路径确保中文显示）
+        # 设置字体（使用与饼图相同的字体设置）
         from matplotlib.font_manager import FontProperties
         if self._font_file_path:
             font_prop = FontProperties(fname=self._font_file_path)
-            plt.title(title, fontsize=14, fontweight='bold', pad=20, fontproperties=font_prop)
-            # 设置y轴标签字体
+            # 设置标题和y轴标签
+            plt.title(title, fontsize=14, fontweight='bold', fontproperties=font_prop)
             ax.set_ylabel('数值', fontproperties=font_prop, fontsize=12)
-        else:
-            plt.title(title, fontsize=14, fontweight='bold', pad=20)
-            ax.set_ylabel('数值', fontsize=12)
-        
-        # 设置x轴标签（确保中文正常显示）
-        ax.set_xticks(range(len(labels)))
-        if self._font_file_path:
-            # 为每个标签设置字体属性，确保中文正常显示
-            # 使用较小的旋转角度（30度）和更好的对齐方式，避免标签被截断
+            
+            # 设置x轴标签
+            ax.set_xticks(range(len(labels)))
             ax.set_xticklabels(labels, rotation=30, ha='right', fontproperties=font_prop, fontsize=10)
         else:
+            # 设置标题和y轴标签
+            plt.title(title, fontsize=14, fontweight='bold')
+            ax.set_ylabel('数值', fontsize=12)
+            
+            # 设置x轴标签
+            ax.set_xticks(range(len(labels)))
             ax.set_xticklabels(labels, rotation=30, ha='right', fontsize=10)
         
-        # 计算y轴上限，为数值标签留出空间（增加最大值15%的空间）
+        # 设置y轴范围
         max_value = max(values) if values else 1
-        y_max = max_value * 1.15
-        ax.set_ylim(0, y_max)
+        ax.set_ylim(0, max_value * 1.2)
         
-        # 在柱状图上显示数值（位置在柱子顶部上方，避免被边框遮挡）
-        for i, (bar, value) in enumerate(zip(bars, values)):
+        # 在柱状图上显示数值
+        for bar, value in zip(bars, values):
             height = bar.get_height()
-            # 在柱子高度基础上增加3-5%的偏移，确保标签在柱子顶部上方且不被边框遮挡
-            label_y = height + max_value * 0.03
             if self._font_file_path:
                 ax.text(
                     bar.get_x() + bar.get_width() / 2., 
-                    label_y,
+                    height,
                     f'{value:.0f}',
                     ha='center', 
                     va='bottom',
                     fontsize=10,
-                    fontweight='bold',
                     fontproperties=font_prop
                 )
             else:
                 ax.text(
                     bar.get_x() + bar.get_width() / 2., 
-                    label_y,
+                    height,
                     f'{value:.0f}',
                     ha='center', 
                     va='bottom',
-                    fontsize=10,
-                    fontweight='bold'
+                    fontsize=10
                 )
         
         # 设置网格
-        ax.grid(axis='y', alpha=0.3, linestyle='--')
+        ax.grid(axis='y', alpha=0.3)
         
-        # 调整布局，为旋转的x轴标签留出足够的底部空间
-        # 根据标签数量和长度动态调整底部边距
-        max_label_length = max([len(str(label)) for label in labels]) if labels else 0
-        num_labels = len(labels) if labels else 0
-        # 动态计算底部边距：基础0.35 + 标签长度影响 + 标签数量影响
-        # 旋转30度的中文标签需要足够的底部空间，确保长标签完全可见
-        bottom_margin = max(0.35, 0.30 + max_label_length * 0.03 + num_labels * 0.025)
-        # 先使用 subplots_adjust 设置精确的边距
-        plt.subplots_adjust(
-            bottom=bottom_margin,  # 底部边距
-            top=0.90,              # 顶部边距
-            left=0.12,             # 左边距（为y轴标签留空间）
-            right=0.95             # 右边距
-        )
-        # 然后再使用 tight_layout 进行微调
-        plt.tight_layout(rect=[0, bottom_margin, 1, 0.90])
+        # 调整布局
+        plt.tight_layout()
         
-        # 生成临时文件路径
+        # 保存图片
         import uuid
         filename = f"chart_{uuid.uuid4().hex[:8]}.png"
         filepath = os.path.join(self.output_dir, filename)
-        
-        # 保存图片
-        print(f"正在保存图片到: {filepath}, DPI: {dpi}")
-        plt.savefig(
-            filepath,
-            dpi=dpi,
-            bbox_inches='tight',
-            facecolor='white',
-            transparent=False
-        )
-        
-        # 关闭图形以释放内存
+        plt.savefig(filepath, dpi=dpi, bbox_inches='tight', facecolor='white')
         plt.close(fig)
         
-        # 优化图片文件大小（压缩PNG）
-        try:
-            img = Image.open(filepath)
-            # 如果图片太大，进行压缩
-            original_size = os.path.getsize(filepath)
-            if original_size > 500 * 1024:  # 如果大于500KB
-                print(f"图片文件较大 ({original_size / 1024:.2f} KB)，进行压缩...")
-                # 使用PIL重新保存以压缩
-                img.save(filepath, 'PNG', optimize=True, compress_level=6)
-                new_size = os.path.getsize(filepath)
-                print(f"压缩完成: {original_size / 1024:.2f} KB -> {new_size / 1024:.2f} KB")
-            else:
-                print(f"图片文件大小: {original_size / 1024:.2f} KB")
-            img.close()
-        except Exception as e:
-            print(f"图片压缩失败（继续使用原图）: {e}")
-        
-        print(f"图片保存完成: {filepath}")
         return filepath
     
     def generate_line_chart(

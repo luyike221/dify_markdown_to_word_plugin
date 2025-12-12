@@ -362,7 +362,7 @@ paper_size: "A4"
 
 ### 环境要求
 
-- Python 3.12+
+- Python 3.12
 - 依赖安装：`pip install -r requirements.txt`
 - 运行中的 Dify 实例（用于插件调试或安装）
 
