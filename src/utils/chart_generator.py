@@ -7,7 +7,7 @@
 
 import os
 import tempfile
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 import numpy as np
 import matplotlib
 # 在 Docker 环境中使用无界面后端
@@ -464,16 +464,18 @@ class ChartGenerator:
     def generate_bar_chart(
         self, 
         title: str, 
-        data: Dict[str, float], 
+        data: Union[Dict[str, float], Dict[str, Dict[str, float]]], 
         colors: Optional[List[str]] = None,
         width_cm: float = 14.0,
         dpi: int = 300
     ) -> str:
-        """生成柱状图
+        """生成柱状图（支持单一数据系列和分组数据系列）
         
         Args:
             title: 图表标题
-            data: 数据字典，格式：{"标签": 数值}
+            data: 数据字典，支持两种格式：
+                  - 单一系列：{"标签": 数值}，如 {"4月": 100, "5月": 200}
+                  - 分组系列：{"系列名": {"标签": 数值}}，如 {"4级告警": {"4月": 1519, "5月": 1616}, "5级告警": {"4月": 73, "5月": 164}}
             colors: 颜色列表，如果不提供则使用默认配色
             width_cm: 图片宽度（厘米）
             dpi: 图片分辨率
@@ -484,6 +486,26 @@ class ChartGenerator:
         if not data or len(data) == 0:
             raise ValueError("数据不能为空")
         
+        # 检测数据格式：判断是否为分组数据
+        is_grouped = False
+        first_value = next(iter(data.values()))
+        if isinstance(first_value, dict):
+            is_grouped = True
+        
+        if is_grouped:
+            return self._generate_grouped_bar_chart(title, data, colors, width_cm, dpi)
+        else:
+            return self._generate_single_bar_chart(title, data, colors, width_cm, dpi)
+    
+    def _generate_single_bar_chart(
+        self,
+        title: str,
+        data: Dict[str, float],
+        colors: Optional[List[str]],
+        width_cm: float,
+        dpi: int
+    ) -> str:
+        """生成单一数据系列的柱状图"""
         # 准备数据
         labels = list(data.keys())
         values = [float(v) for v in data.values()]
@@ -564,19 +586,189 @@ class ChartGenerator:
         
         return filepath
     
+    def _generate_grouped_bar_chart(
+        self,
+        title: str,
+        data: Dict[str, Dict[str, float]],
+        colors: Optional[List[str]],
+        width_cm: float,
+        dpi: int
+    ) -> str:
+        """生成分组柱状图（多个数据系列）"""
+        # 准备数据
+        series_names = list(data.keys())  # 系列名称，如 ["4级告警", "5级告警", "总量告警"]
+        
+        # 获取所有标签（x轴标签，如月份）
+        all_labels = set()
+        for series_data in data.values():
+            all_labels.update(series_data.keys())
+        labels = sorted(list(all_labels))  # 排序以确保顺序一致
+        
+        # 使用提供的颜色或默认颜色
+        chart_colors = colors or self.DEFAULT_COLORS
+        
+        # 创建图形，根据系列数量和标签数量调整宽度和高度
+        num_series = len(series_names)
+        num_labels = len(labels)
+        # 增加宽度以适应更多标签和更宽的柱子
+        adjusted_width_cm = max(width_cm, width_cm * (1 + num_labels * 0.1))
+        height_cm = max(10.0, 8.0 + num_series * 0.3)
+        fig, ax = plt.subplots(figsize=(adjusted_width_cm/2.54, height_cm/2.54), dpi=dpi)
+        
+        # 计算柱状图的位置和宽度
+        # 增加组间距，减少柱子拥挤
+        x = np.arange(len(labels))  # x轴位置
+        # 增加每个柱子的宽度，减少拥挤感
+        bar_width = 0.25  # 固定每个柱子的宽度，不再除以系列数
+        # 计算组内间距（同一组内柱子之间的间距）
+        group_spacing = bar_width * 0.3  # 组内间距为柱子宽度的30%
+        # 计算总组宽度
+        total_group_width = num_series * bar_width + (num_series - 1) * group_spacing
+        # 计算偏移量，使柱状图居中
+        offset = total_group_width / 2 - bar_width / 2
+        
+        # 存储每个系列的颜色，确保图例颜色一致
+        series_colors = []
+        
+        # 绘制每个系列的柱状图
+        bars_list = []
+        for i, series_name in enumerate(series_names):
+            series_data = data[series_name]
+            values = [float(series_data.get(label, 0)) for label in labels]
+            
+            # 选择颜色
+            series_color = chart_colors[i % len(chart_colors)]
+            series_colors.append(series_color)
+            
+            # 计算每个系列的位置
+            x_pos = x - offset + i * (bar_width + group_spacing)
+            
+            # 绘制柱状图
+            bars = ax.bar(
+                x_pos,
+                values,
+                bar_width,
+                label=series_name,
+                color=series_color
+            )
+            bars_list.append(bars)
+            
+            # 在柱状图上显示数值
+            from matplotlib.font_manager import FontProperties
+            font_prop = FontProperties(fname=self._font_file_path) if self._font_file_path else None
+            
+            for bar, value in zip(bars, values):
+                if value > 0:  # 只显示非零值
+                    height = bar.get_height()
+                    if font_prop:
+                        ax.text(
+                            bar.get_x() + bar.get_width() / 2.,
+                            height,
+                            f'{value:.0f}',
+                            ha='center',
+                            va='bottom',
+                            fontsize=8,
+                            fontproperties=font_prop
+                        )
+                    else:
+                        ax.text(
+                            bar.get_x() + bar.get_width() / 2.,
+                            height,
+                            f'{value:.0f}',
+                            ha='center',
+                            va='bottom',
+                            fontsize=8
+                        )
+        
+        # 设置字体
+        from matplotlib.font_manager import FontProperties
+        if self._font_file_path:
+            font_prop = FontProperties(fname=self._font_file_path)
+            # 设置标题和y轴标签
+            plt.title(title, fontsize=14, fontweight='bold', fontproperties=font_prop)
+            ax.set_ylabel('数值', fontproperties=font_prop, fontsize=12)
+            
+            # 设置x轴标签
+            ax.set_xticks(x)
+            ax.set_xticklabels(labels, rotation=30, ha='right', fontproperties=font_prop, fontsize=10)
+            
+            # 设置图例 - 移到图表外部右侧，避免与柱子重叠
+            # 使用 handles 和 labels 确保颜色一致
+            from matplotlib.patches import Rectangle
+            handles = [Rectangle((0,0),1,1, facecolor=color, edgecolor='none') 
+                      for color in series_colors]
+            ax.legend(
+                handles=handles,
+                labels=series_names,
+                loc='center left',
+                bbox_to_anchor=(1.02, 0.5),
+                fontsize=10,
+                prop=font_prop,
+                frameon=True,
+                fancybox=True,
+                shadow=True
+            )
+        else:
+            # 设置标题和y轴标签
+            plt.title(title, fontsize=14, fontweight='bold')
+            ax.set_ylabel('数值', fontsize=12)
+            
+            # 设置x轴标签
+            ax.set_xticks(x)
+            ax.set_xticklabels(labels, rotation=30, ha='right', fontsize=10)
+            
+            # 设置图例 - 移到图表外部右侧，避免与柱子重叠
+            from matplotlib.patches import Rectangle
+            handles = [Rectangle((0,0),1,1, facecolor=color, edgecolor='none') 
+                      for color in series_colors]
+            ax.legend(
+                handles=handles,
+                labels=series_names,
+                loc='center left',
+                bbox_to_anchor=(1.02, 0.5),
+                fontsize=10,
+                frameon=True,
+                fancybox=True,
+                shadow=True
+            )
+        
+        # 设置y轴范围
+        all_values = []
+        for series_data in data.values():
+            all_values.extend([float(v) for v in series_data.values()])
+        max_value = max(all_values) if all_values else 1
+        ax.set_ylim(0, max_value * 1.2)
+        
+        # 设置网格
+        ax.grid(axis='y', alpha=0.3)
+        
+        # 调整布局，为右侧图例留出空间
+        plt.tight_layout(rect=[0, 0, 0.85, 1])  # 左侧0，底部0，右侧0.85（留出15%给图例），顶部1
+        
+        # 保存图片
+        import uuid
+        filename = f"chart_{uuid.uuid4().hex[:8]}.png"
+        filepath = os.path.join(self.output_dir, filename)
+        plt.savefig(filepath, dpi=dpi, bbox_inches='tight', facecolor='white')
+        plt.close(fig)
+        
+        return filepath
+    
     def generate_line_chart(
         self, 
         title: str, 
-        data: Dict[str, float], 
+        data: Union[Dict[str, float], Dict[str, Dict[str, float]]], 
         colors: Optional[List[str]] = None,
         width_cm: float = 14.0,
         dpi: int = 300
     ) -> str:
-        """生成折线图
+        """生成折线图（支持单一数据系列和多个数据系列）
         
         Args:
             title: 图表标题
-            data: 数据字典，格式：{"标签": 数值}，标签通常为时间或顺序值
+            data: 数据字典，支持两种格式：
+                  - 单一系列：{"标签": 数值}，如 {"4月": 100, "5月": 200}
+                  - 多条系列：{"系列名": {"标签": 数值}}，如 {"主要告警": {"4月": 1565, "5月": 1762}, "硬件监控告警": {"4月": 27, "5月": 18}}
             colors: 颜色列表，如果不提供则使用默认配色
             width_cm: 图片宽度（厘米）
             dpi: 图片分辨率
@@ -587,6 +779,26 @@ class ChartGenerator:
         if not data or len(data) == 0:
             raise ValueError("数据不能为空")
         
+        # 检测数据格式：判断是否为多条数据
+        is_multi_line = False
+        first_value = next(iter(data.values()))
+        if isinstance(first_value, dict):
+            is_multi_line = True
+        
+        if is_multi_line:
+            return self._generate_multi_line_chart(title, data, colors, width_cm, dpi)
+        else:
+            return self._generate_single_line_chart(title, data, colors, width_cm, dpi)
+    
+    def _generate_single_line_chart(
+        self,
+        title: str,
+        data: Dict[str, float],
+        colors: Optional[List[str]],
+        width_cm: float,
+        dpi: int
+    ) -> str:
+        """生成单一数据系列的折线图"""
         # 准备数据
         labels = list(data.keys())
         values = list(data.values())
@@ -723,6 +935,106 @@ class ChartGenerator:
             print(f"图片压缩失败（继续使用原图）: {e}")
         
         print(f"图片保存完成: {filepath}")
+        return filepath
+    
+    def _generate_multi_line_chart(
+        self,
+        title: str,
+        data: Dict[str, Dict[str, float]],
+        colors: Optional[List[str]],
+        width_cm: float,
+        dpi: int
+    ) -> str:
+        """生成多条折线图（多个数据系列）"""
+        from matplotlib.font_manager import FontProperties
+        import uuid
+        
+        # 字号配置
+        FONT_SIZE = {'title': 11, 'tick': 5.5, 'legend': 5.5, 'value': 4}
+        
+        # 创建带字号的字体属性（解决 fontsize/fontproperties 冲突问题）
+        def get_font(size: float) -> Optional[FontProperties]:
+            if self._font_file_path:
+                return FontProperties(fname=self._font_file_path, size=size)
+            return None
+        
+        # 准备数据
+        series_names = list(data.keys())
+        all_labels = sorted(set(label for series in data.values() for label in series.keys()))
+        chart_colors = colors or self.DEFAULT_COLORS
+        x_pos = range(len(all_labels))
+        
+        # 创建图形
+        height_cm = max(10.0, 8.0 + len(series_names) * 0.3)
+        fig, ax = plt.subplots(figsize=(width_cm/2.54, height_cm/2.54), dpi=dpi)
+        
+        # 收集所有值用于计算Y轴范围
+        all_values = []
+        
+        # 绘制每条折线
+        for i, series_name in enumerate(series_names):
+            values = [float(data[series_name].get(label, 0)) for label in all_labels]
+            all_values.extend(values)
+            color = chart_colors[i % len(chart_colors)]
+            
+            ax.plot(x_pos, values, marker='o', linestyle='-', linewidth=1.2,
+                    markersize=4, color=color, label=series_name)
+            
+            # 数据点标签
+            value_range = (max(all_values) - min(all_values)) if len(all_values) > 1 else 1
+            font_value = get_font(FONT_SIZE['value'])
+            for x, v in zip(x_pos, values):
+                if v > 0:
+                    text = f'{v:.0f}' if v == int(v) else f'{v:.1f}'
+                    ax.text(x, v + value_range * 0.008, text, ha='center', va='bottom',
+                            fontproperties=font_value, fontsize=FONT_SIZE['value'])
+        
+        # Y轴范围
+        if all_values:
+            v_min, v_max = min(all_values), max(all_values)
+            v_range = v_max - v_min if v_max != v_min else v_max or 1
+            ax.set_ylim(v_min - v_range * 0.1, v_max + v_range * 0.15)
+        
+        # X轴标签
+        ax.set_xticks(x_pos)
+        font_tick = get_font(FONT_SIZE['tick'])
+        ax.set_xticklabels(all_labels, rotation=45, ha='right', 
+                          fontproperties=font_tick, fontsize=FONT_SIZE['tick'])
+        
+        # Y轴刻度字体（使用 tick_params 确保生效）
+        ax.tick_params(axis='y', labelsize=FONT_SIZE['tick'])
+        if font_tick:
+            for label in ax.get_yticklabels():
+                label.set_fontproperties(font_tick)
+        
+        # 标题
+        font_title = get_font(FONT_SIZE['title'])
+        ax.set_title(title, fontproperties=font_title, fontsize=FONT_SIZE['title'], 
+                     fontweight='bold', pad=20)
+        
+        # Y轴标签
+        ax.set_ylabel('数值', fontproperties=font_tick, fontsize=FONT_SIZE['tick'])
+        
+        # 图例
+        font_legend = get_font(FONT_SIZE['legend'])
+        ax.legend(loc='center left', bbox_to_anchor=(1.005, 0.5),
+                  prop=font_legend, frameon=True, fancybox=False, shadow=False,
+                  borderpad=0.3, handlelength=1.2, handletextpad=0.3)
+        
+        # 网格
+        ax.grid(axis='both', alpha=0.3, linestyle='--')
+        
+        # 保存图片
+        filepath = os.path.join(self.output_dir, f"chart_{uuid.uuid4().hex[:8]}.png")
+        fig.savefig(filepath, dpi=dpi, bbox_inches='tight', facecolor='white')
+        plt.close(fig)
+        
+        # 压缩大图片
+        if os.path.getsize(filepath) > 500 * 1024:
+            img = Image.open(filepath)
+            img.save(filepath, 'PNG', optimize=True, compress_level=6)
+            img.close()
+        
         return filepath
     
     def cleanup(self, filepath: str):
