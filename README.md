@@ -1,12 +1,30 @@
 # Smart Doc Generator (Dify Plugin)
 
-A smart Markdown to Word document generator with automatic chart generation (pie charts, bar charts, line charts) and flexible template mechanism, enabling rapid generation of formatted Word documents for various scenarios.
+A smart Markdown to Word document generator with **automatic chart generation** (pie charts, bar charts, line charts) and flexible template mechanism, enabling rapid generation of formatted Word documents with rich visualizations for various scenarios.
 
 ## Overview
 
-Smart Doc Generator is a powerful Dify plugin that converts Markdown content into professionally formatted Word documents (.docx). It features intelligent chart generation capabilities that automatically recognize data patterns in Markdown and generate appropriate visualizations.
+Smart Doc Generator is a powerful Dify plugin that converts Markdown content into professionally formatted Word documents (.docx). **The plugin's standout feature is its intelligent chart generation system** that automatically recognizes data patterns in Markdown and generates beautiful, professional charts (pie charts, bar charts, line charts) directly embedded in Word documents. Combined with a flexible template system, it enables rapid generation of data-rich, visually appealing documents.
 
 ## Key Features
+
+### 📊 Intelligent Chart Generation (Core Feature)
+
+**Generate professional charts directly in Word documents!** This plugin's most powerful feature automatically creates beautiful, publication-ready charts from your data:
+
+- **Automatic Chart Recognition**: Intelligently identifies data patterns in Markdown tables and content
+- **Multiple Chart Types**: Supports pie charts, bar charts, and line charts
+- **Flexible Positioning**: Charts can be inserted at specific positions in the document (before/after headings, tables, etc.)
+- **Professional Styling**: Charts are styled to match your document theme and color scheme
+- **Customizable Size**: Adjust chart width to fit your document layout
+- **Seamless Integration**: Charts are embedded directly in the Word document, no external files needed
+
+**Use Cases:**
+- Sales reports with monthly trend charts
+- Survey results with pie chart visualizations
+- Performance dashboards with bar chart comparisons
+- Research papers with data visualization
+- Business presentations with embedded charts
 
 ### 🎨 Template System (Core Feature)
 
@@ -24,7 +42,6 @@ With the template system, you can:
 ### Other Features
 
 - ✅ Markdown → Word (.docx) conversion
-- ✅ **Intelligent Chart Generation**: Automatically recognizes data and generates pie charts, bar charts, and line charts
 - ✅ Configurable fonts, font sizes, line spacing, page margins, etc.
 - ✅ Support for page numbers, headers, and footers
 - ✅ Returns document files and JSON metadata
@@ -179,9 +196,144 @@ The tool returns two messages:
    }
    ```
 
+## Chart Generation Guide
+
+### How Chart Generation Works
+
+The chart generation feature allows you to automatically insert professional charts into your Word documents. Here's how it works:
+
+1. **Enable Chart Generation**: Set `enable_charts: true` in your tool parameters
+2. **Provide Chart Data**: Pass chart data in JSON format via the `chart_data` parameter
+3. **Specify Chart Position**: Define where charts should appear in the document using the `position` field
+4. **Automatic Rendering**: The plugin generates the chart image and inserts it into the Word document
+
+### Chart Data Format
+
+The `chart_data` parameter accepts a JSON object with the following structure:
+
+```json
+{
+  "charts": [
+    {
+      "type": "pie" | "bar" | "line",
+      "title": "Chart Title",
+      "position": "after:Heading Text" | "before:Heading Text" | "after:Table Title",
+      "data": {
+        "Label1": value1,
+        "Label2": value2,
+        ...
+      }
+    }
+  ]
+}
+```
+
+### Chart Types
+
+#### Pie Charts
+Perfect for showing proportions and percentages:
+```json
+{
+  "type": "pie",
+  "title": "Market Share",
+  "position": "after:Market Analysis",
+  "data": {
+    "Product A": 35,
+    "Product B": 25,
+    "Product C": 40
+  }
+}
+```
+
+#### Bar Charts
+Ideal for comparing values across categories:
+```json
+{
+  "type": "bar",
+  "title": "Monthly Sales",
+  "position": "after:Sales Data",
+  "data": {
+    "Jan": 1000,
+    "Feb": 1500,
+    "Mar": 1200
+  }
+}
+```
+
+#### Line Charts
+Great for showing trends over time:
+```json
+{
+  "type": "line",
+  "title": "Revenue Trend",
+  "position": "after:Financial Overview",
+  "data": {
+    "Q1": 50000,
+    "Q2": 55000,
+    "Q3": 60000,
+    "Q4": 65000
+  }
+}
+```
+
+### Chart Positioning
+
+Charts can be positioned relative to document elements:
+- `"after:Heading Text"` - Inserts chart after the first occurrence of the specified heading
+- `"before:Heading Text"` - Inserts chart before the specified heading
+- `"after:Table Title"` - Inserts chart after a table with the specified title
+
 ## Examples
 
-### Example 1: Using Default Theme
+### Example 1: Generating Word Document with Charts
+
+```yaml
+markdown_text: |
+  # Sales Report Q4 2024
+  
+  ## Monthly Sales Data
+  
+  | Month | Sales | Growth |
+  |-------|-------|--------|
+  | Oct   | 1000  | +10%   |
+  | Nov   | 1500  | +50%   |
+  | Dec   | 1800  | +20%   |
+  
+  ## Product Distribution
+  
+  Our products are distributed across three main categories.
+
+templates: "business"
+enable_charts: true
+chart_data: |
+  {
+    "charts": [
+      {
+        "type": "bar",
+        "title": "Monthly Sales Trend",
+        "position": "after:Monthly Sales Data",
+        "data": {
+          "Oct": 1000,
+          "Nov": 1500,
+          "Dec": 1800
+        }
+      },
+      {
+        "type": "pie",
+        "title": "Product Distribution",
+        "position": "after:Product Distribution",
+        "data": {
+          "Category A": 45,
+          "Category B": 30,
+          "Category C": 25
+        }
+      }
+    ]
+  }
+chart_insert_width: 14.0
+```
+
+### Example 2: Using Default Theme
 
 ```yaml
 markdown_text: |
@@ -200,7 +352,7 @@ templates: "default"
 add_page_numbers: true
 ```
 
-### Example 2: Using Academic Theme
+### Example 3: Using Academic Theme
 
 ```yaml
 markdown_text: |
@@ -219,7 +371,7 @@ font_family: "Times New Roman"
 line_spacing: 2.0
 ```
 
-### Example 3: Using Business Theme with Customization
+### Example 4: Using Business Theme with Customization
 
 ```yaml
 markdown_text: |
@@ -235,19 +387,30 @@ page_margins: 2.0
 paper_size: "A4"
 ```
 
-### Example 4: With Chart Generation
+### Example 5: Complex Report with Multiple Charts
 
 ```yaml
 markdown_text: |
-  # Sales Report
+  # Annual Performance Report 2024
   
-  ## Monthly Sales Data
+  ## Revenue Overview
   
-  | Month | Sales |
-  |-------|-------|
-  | Jan   | 1000  |
-  | Feb   | 1500  |
-  | Mar   | 1200  |
+  Our revenue has shown consistent growth throughout the year.
+  
+  | Quarter | Revenue | Profit |
+  |---------|---------|--------|
+  | Q1      | 50000   | 10000  |
+  | Q2      | 55000   | 12000  |
+  | Q3      | 60000   | 14000  |
+  | Q4      | 65000   | 15000  |
+  
+  ## Market Share Analysis
+  
+  We have maintained a strong position in the market.
+  
+  ## Regional Performance
+  
+  Performance varies across different regions.
 
 templates: "business"
 enable_charts: true
@@ -255,17 +418,41 @@ chart_data: |
   {
     "charts": [
       {
-        "type": "bar",
-        "title": "Monthly Sales",
-        "position": "after:Monthly Sales Data",
+        "type": "line",
+        "title": "Revenue Trend 2024",
+        "position": "after:Revenue Overview",
         "data": {
-          "Jan": 1000,
-          "Feb": 1500,
-          "Mar": 1200
+          "Q1": 50000,
+          "Q2": 55000,
+          "Q3": 60000,
+          "Q4": 65000
+        }
+      },
+      {
+        "type": "pie",
+        "title": "Market Share Distribution",
+        "position": "after:Market Share Analysis",
+        "data": {
+          "Our Company": 35,
+          "Competitor A": 25,
+          "Competitor B": 20,
+          "Others": 20
+        }
+      },
+      {
+        "type": "bar",
+        "title": "Regional Performance",
+        "position": "after:Regional Performance",
+        "data": {
+          "North": 30000,
+          "South": 25000,
+          "East": 35000,
+          "West": 20000
         }
       }
     ]
   }
+chart_insert_width: 15.0
 ```
 
 ## Template Configuration
