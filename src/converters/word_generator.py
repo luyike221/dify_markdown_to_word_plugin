@@ -48,124 +48,50 @@ except ImportError as e:
     print(f"图表模块导入失败: {e}")
 
 
-@dataclass
-class WordStyle:
-    """Word样式配置"""
-    font_name: str = "微软雅黑"
-    font_size: int = 12
-    line_spacing: float = 1.15
-    paragraph_spacing_before: int = 0
-    paragraph_spacing_after: int = 6
-    alignment: str = "left"
-    bold: bool = False
-    italic: bool = False
-    color: Optional[str] = None
+# WordStyle 已废弃，使用 config.models.StyleConfig 代替
 
 
 class WordGenerator:
-    """Word文档生成器"""
+    """Word文档生成器（重构版）"""
     
-    def __init__(self, template_path: Optional[str] = None, config: Optional[Dict] = None, style_handler=None):
+    def __init__(self, config, enable_charts: bool = False, chart_data: str = ''):
         """初始化生成器
         
         Args:
-            template_path: Word模板文件路径
-            config: 生成器配置
-            style_handler: 样式处理器（可选）
+            config: StyleConfig 配置对象
+            enable_charts: 是否启用图表生成
+            chart_data: 图表数据（JSON格式）
         """
-        self.config = config or {}
-        self.template_path = template_path
-        self.style_handler = style_handler
-        self.document = self._create_document()
-        self.styles = self._setup_styles()
+        # 导入 StyleConfig（使用绝对导入，因为 src 已在 sys.path 中）
+        try:
+            # 尝试绝对导入（推荐）
+            from config.models import StyleConfig
+        except ImportError:
+            try:
+                # 如果绝对导入失败，尝试相对导入
+                from ..config.models import StyleConfig
+            except ImportError:
+                # 如果都失败，抛出错误
+                raise ImportError(
+                    "无法导入 StyleConfig。请确保 src 目录在 sys.path 中，"
+                    "或使用：from config import StyleConfig"
+                )
+        
+        # 验证配置类型
+        if not isinstance(config, StyleConfig):
+            raise TypeError(f"config must be StyleConfig, got {type(config)}")
+        
+        self.config = config
+        self.document = Document()
         
         # 图表相关配置
-        self.enable_charts = self.config.get('enable_charts', False)
+        self.enable_charts = enable_charts
         self.chart_data = []  # 存储识别的图表数据
         self.chart_images = {}  # 存储生成的图片路径 {position: image_path}
         self.chart_generator = None
         self.temp_image_files = []  # 临时图片文件列表，用于清理
-        self.chart_data_source = self.config.get('chart_data', '')  # 图表数据源
+        self.chart_data_source = chart_data  # 图表数据源
         
-    def _create_document(self) -> Document:
-        """创建Word文档"""
-        if self.template_path and os.path.exists(self.template_path):
-            return Document(self.template_path)
-        else:
-            return Document()
-    
-    def _setup_styles(self) -> Dict[str, WordStyle]:
-        """设置文档样式"""
-        styles = {
-            'normal': WordStyle(
-                font_name="微软雅黑",
-                font_size=12,
-                line_spacing=1.15
-            ),
-            'heading1': WordStyle(
-                font_name="微软雅黑",
-                font_size=18,
-                bold=True,
-                paragraph_spacing_before=12,
-                paragraph_spacing_after=6
-            ),
-            'heading2': WordStyle(
-                font_name="微软雅黑",
-                font_size=16,
-                bold=True,
-                paragraph_spacing_before=10,
-                paragraph_spacing_after=6
-            ),
-            'heading3': WordStyle(
-                font_name="微软雅黑",
-                font_size=14,
-                bold=True,
-                paragraph_spacing_before=8,
-                paragraph_spacing_after=6
-            ),
-            'heading4': WordStyle(
-                font_name="微软雅黑",
-                font_size=13,
-                bold=True,
-                paragraph_spacing_before=6,
-                paragraph_spacing_after=6
-            ),
-            'heading5': WordStyle(
-                font_name="微软雅黑",
-                font_size=12,
-                bold=True,
-                paragraph_spacing_before=6,
-                paragraph_spacing_after=6
-            ),
-            'heading6': WordStyle(
-                font_name="微软雅黑",
-                font_size=12,
-                bold=True,
-                italic=True,
-                paragraph_spacing_before=6,
-                paragraph_spacing_after=6
-            ),
-            'code': WordStyle(
-                font_name="Consolas",
-                font_size=10,
-                color="#333333"
-            ),
-            'quote': WordStyle(
-                font_name="微软雅黑",
-                font_size=12,
-                italic=True,
-                color="#666666"
-            )
-        }
-        
-        # 应用自定义样式配置
-        if 'styles' in self.config:
-            for style_name, style_config in self.config['styles'].items():
-                if style_name in styles:
-                    for attr, value in style_config.items():
-                        setattr(styles[style_name], attr, value)
-        
-        return styles
     
     def generate(self, markdown_element: MarkdownElement, output_path: str, markdown_text: Optional[str] = None) -> bool:
         """生成Word文档
@@ -179,6 +105,14 @@ class WordGenerator:
             是否生成成功
         """
         try:
+            # 设置页面边距（从配置读取，单位：厘米转英寸）
+            sections = self.document.sections
+            for section in sections:
+                section.top_margin = Inches(self.config.page.margin_top / 2.54)
+                section.bottom_margin = Inches(self.config.page.margin_bottom / 2.54)
+                section.left_margin = Inches(self.config.page.margin_left / 2.54)
+                section.right_margin = Inches(self.config.page.margin_right / 2.54)
+            
             # 如果启用图表功能，先识别和生成图表
             print(f"图表功能检查: enable_charts={self.enable_charts}, CHARTS_AVAILABLE={CHARTS_AVAILABLE}, markdown_text={'有' if markdown_text else '无'}")
             if self.enable_charts and CHARTS_AVAILABLE and markdown_text:
@@ -260,12 +194,11 @@ class WordGenerator:
             elif element.name == 'pre':
                 code_text = element.get_text().strip()
                 code_paragraph = self.document.add_paragraph(code_text)
-                self._apply_style(code_paragraph, self.styles['code'])
+                self._apply_element_style(code_paragraph, self.config.code_block)
             elif element.name == 'blockquote':
                 quote_text = element.get_text().strip()
                 quote_paragraph = self.document.add_paragraph(quote_text)
-                self._apply_style(quote_paragraph, self.styles['quote'])
-                quote_paragraph.paragraph_format.left_indent = Inches(0.5)
+                self._apply_element_style(quote_paragraph, self.config.quote)
             elif element.name in ['ul', 'ol']:
                 self._process_html_list(element)
             elif element.name == 'table':
@@ -557,40 +490,26 @@ class WordGenerator:
         pass
     
     def _process_heading(self, element: MarkdownElement):
-        """处理标题"""
+        """处理标题（重构版）"""
         level = int(element.element_type.replace('heading', ''))
-        style_name = f'heading{level}'
         
         paragraph = self.document.add_heading(element.content, level=level)
         
-        # 优先使用 StyleHandler 的样式
-        if self.style_handler:
-            style = self.style_handler.get_style(style_name)
-            if style:
-                self._apply_style_handler_style(paragraph, style, is_heading=True)
-                return
+        # 从配置获取标题样式
+        heading_style = self.config.headings.get(level)
         
-        # 否则使用默认样式
-        self._apply_style(paragraph, self.styles.get(style_name, self.styles['normal']))
+        # 应用样式
+        self._apply_element_style(paragraph, heading_style, is_heading=True)
     
     def _process_paragraph(self, element: MarkdownElement):
-        """处理段落"""
+        """处理段落（重构版）"""
         paragraph = self.document.add_paragraph()
         
         # 处理段落内容，包括格式化文本
         self._process_formatted_text(paragraph, element.content)
         
-        # 优先使用 StyleHandler 的样式
-        if self.style_handler:
-            style = self.style_handler.get_style('normal')
-            if style:
-                self._apply_style_handler_style(paragraph, style, is_heading=False)
-            else:
-                # 否则使用默认样式
-                self._apply_style(paragraph, self.styles['normal'])
-        else:
-            # 否则使用默认样式
-            self._apply_style(paragraph, self.styles['normal'])
+        # 应用正文样式
+        self._apply_element_style(paragraph, self.config.body, is_heading=False)
         
         # 检查是否需要在此段落后插入图表
         if self.enable_charts and self.chart_images:
@@ -682,10 +601,11 @@ class WordGenerator:
         
         # 添加代码内容
         code_paragraph = self.document.add_paragraph(element.content)
-        self._apply_style(code_paragraph, self.styles['code'])
+        self._apply_element_style(code_paragraph, self.config.code_block)
         
         # 设置代码块背景色
-        self._set_paragraph_background(code_paragraph, '#f8f8f8')
+        if self.config.code_block.background_color:
+            self._set_paragraph_background(code_paragraph, self.config.code_block.background_color)
     
     def _process_table(self, element: MarkdownElement):
         """处理表格"""
@@ -993,29 +913,26 @@ class WordGenerator:
     def _process_quote(self, element: MarkdownElement):
         """处理引用"""
         paragraph = self.document.add_paragraph(element.content)
-        self._apply_style(paragraph, self.styles['quote'])
-        
-        # 设置引用样式
-        paragraph.paragraph_format.left_indent = Inches(0.5)
-        self._set_paragraph_border(paragraph, 'left')
+        self._apply_element_style(paragraph, self.config.quote)
     
-    def _apply_style_handler_style(self, paragraph, element_style, is_heading=False):
-        """应用 StyleHandler 的样式到段落
+    def _apply_element_style(self, paragraph, element_style, is_heading=False):
+        """应用元素样式到段落（统一方法）
         
         Args:
             paragraph: Word段落对象
-            element_style: 元素样式
-            is_heading: 是否为标题，标题不应用首行缩进
+            element_style: ElementStyle 对象
+            is_heading: 是否为标题（影响首行缩进）
         """
         from docx.enum.text import WD_LINE_SPACING
         
         # 应用字体样式
         for run in paragraph.runs:
             font = run.font
-            font.name = element_style.font.name
+            font.name = element_style.font.family
             font.size = Pt(element_style.font.size)
             font.bold = element_style.font.bold
             font.italic = element_style.font.italic
+            font.underline = element_style.font.underline
             
             if element_style.font.color:
                 color_hex = element_style.font.color.replace('#', '')
@@ -1026,7 +943,7 @@ class WordGenerator:
                     font.color.rgb = RGBColor(r, g, b)
         
         # 应用段落样式
-        paragraph_format = paragraph.paragraph_format
+        pf = paragraph.paragraph_format
         
         # 对齐方式
         alignment_map = {
@@ -1037,90 +954,51 @@ class WordGenerator:
         }
         paragraph.alignment = alignment_map.get(element_style.paragraph.alignment, WD_ALIGN_PARAGRAPH.LEFT)
         
-        # 行距处理：如果 line_spacing >= 20，认为是固定值（磅），否则认为是倍数
+        # 行距：>= 20 为固定值（磅），< 20 为倍数
         if element_style.paragraph.line_spacing >= 20:
-            # 固定值行距（磅）
-            paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
-            paragraph_format.line_spacing = Pt(element_style.paragraph.line_spacing)
+            pf.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+            pf.line_spacing = Pt(element_style.paragraph.line_spacing)
         else:
-            # 倍数行距
-            paragraph_format.line_spacing = element_style.paragraph.line_spacing
+            pf.line_spacing = element_style.paragraph.line_spacing
         
         # 段前段后间距
-        paragraph_format.space_before = Pt(element_style.paragraph.space_before)
-        paragraph_format.space_after = Pt(element_style.paragraph.space_after)
+        pf.space_before = Pt(element_style.paragraph.space_before)
+        pf.space_after = Pt(element_style.paragraph.space_after)
         
-        # 缩进
-        # 注意：配置中的值单位是厘米，需要转换为英寸
-        # 1厘米 = 1/2.54 英寸
-        paragraph_format.left_indent = Inches(element_style.paragraph.left_indent / 2.54)
-        paragraph_format.right_indent = Inches(element_style.paragraph.right_indent / 2.54)
+        # 左右缩进（厘米转英寸）
+        pf.left_indent = Inches(element_style.paragraph.left_indent / 2.54) if element_style.paragraph.left_indent else None
+        pf.right_indent = Inches(element_style.paragraph.right_indent / 2.54) if element_style.paragraph.right_indent else None
         
-        # 首行缩进：标题不应用首行缩进，只有正文段落才应用
+        # 首行缩进
         if is_heading:
             # 标题不应用首行缩进
-            paragraph_format.first_line_indent = Inches(0)
-        elif element_style.paragraph.first_line_indent == 0 and element_style.font.size:
-            # 正文段落：如果配置值为0，则根据字体大小动态计算两个字符的宽度
-            # 两个字符宽度 = 字体大小 × 2（磅），转换为英寸
-            # 1磅 = 1/72 英寸
+            pf.first_line_indent = Inches(0)
+        elif element_style.paragraph.first_line_indent == 0:
+            # 动态计算两个字符宽度：字体大小 × 2 / 72 英寸
             first_line_indent_inches = (element_style.font.size * 2) / 72.0
-            paragraph_format.first_line_indent = Inches(first_line_indent_inches)
+            pf.first_line_indent = Inches(first_line_indent_inches)
         else:
             # 使用配置值（厘米转英寸）
-            paragraph_format.first_line_indent = Inches(element_style.paragraph.first_line_indent / 2.54)
+            pf.first_line_indent = Inches(element_style.paragraph.first_line_indent / 2.54)
         
         # 分页控制
-        paragraph_format.keep_together = element_style.paragraph.keep_together
-        paragraph_format.keep_with_next = element_style.paragraph.keep_with_next
-        paragraph_format.page_break_before = element_style.paragraph.page_break_before
-    
-    def _apply_style(self, paragraph, style: WordStyle):
-        """应用样式到段落"""
-        from docx.enum.text import WD_LINE_SPACING
-        
-        # 设置字体
-        for run in paragraph.runs:
-            font = run.font
-            font.name = style.font_name
-            font.size = Pt(style.font_size)
-            font.bold = style.bold
-            font.italic = style.italic
-            
-            if style.color:
-                font.color.rgb = RGBColor.from_string(style.color.replace('#', ''))
-        
-        # 设置段落格式
-        paragraph_format = paragraph.paragraph_format
-        
-        # 行距处理：如果 line_spacing >= 20，认为是固定值（磅），否则认为是倍数
-        if style.line_spacing >= 20:
-            # 固定值行距（磅）
-            paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
-            paragraph_format.line_spacing = Pt(style.line_spacing)
-        else:
-            # 倍数行距
-            paragraph_format.line_spacing = style.line_spacing
-        
-        paragraph_format.space_before = Pt(style.paragraph_spacing_before)
-        paragraph_format.space_after = Pt(style.paragraph_spacing_after)
-        
-        # 设置对齐方式
-        if style.alignment == 'center':
-            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        elif style.alignment == 'right':
-            paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        elif style.alignment == 'justify':
-            paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-        else:
-            paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        pf.keep_together = element_style.paragraph.keep_together
+        pf.keep_with_next = element_style.paragraph.keep_with_next
+        pf.page_break_before = element_style.paragraph.page_break_before
     
     def _apply_code_style(self, run):
-        """应用代码样式"""
+        """应用代码样式（内联代码）"""
         font = run.font
-        font.name = 'Consolas'
-        font.size = Pt(10)
-        font.color.rgb = RGBColor(51, 51, 51)
+        font.name = self.config.code_inline.font.family
+        font.size = Pt(self.config.code_inline.font.size)
+        
+        if self.config.code_inline.font.color:
+            color_hex = self.config.code_inline.font.color.replace('#', '')
+            if len(color_hex) == 6:
+                r = int(color_hex[0:2], 16)
+                g = int(color_hex[2:4], 16)
+                b = int(color_hex[4:6], 16)
+                font.color.rgb = RGBColor(r, g, b)
     
     def _add_hyperlink(self, paragraph, url: str, text: str):
         """添加超链接"""
@@ -1207,7 +1085,13 @@ class WordGenerator:
             print("初始化图表识别器...")
             recognizer = ChartRecognizer()
             print("初始化图表生成器...")
-            self.chart_generator = ChartGenerator()
+            # 准备图表生成器配置
+            chart_config = {
+                'background_color': self.config.chart.background_color,
+                'chart_colors': self.config.chart.colors,
+                'font_sizes': self.config.chart.font_sizes
+            }
+            self.chart_generator = ChartGenerator(config=chart_config)
             
             # 解析图表数据
             print("解析图表数据...")
@@ -1235,24 +1119,24 @@ class WordGenerator:
                         image_path = self.chart_generator.generate_bar_chart(
                             title=title,
                             data=data,
-                            width_cm=self.config.get('chart_width', 14.0),
-                            dpi=self.config.get('chart_dpi', 300)
+                            width_cm=self.config.chart.width,
+                            dpi=self.config.chart.dpi
                         )
                     elif chart_type == 'line':
                         # 生成折线图
                         image_path = self.chart_generator.generate_line_chart(
                             title=title,
                             data=data,
-                            width_cm=self.config.get('chart_width', 14.0),
-                            dpi=self.config.get('chart_dpi', 300)
+                            width_cm=self.config.chart.width,
+                            dpi=self.config.chart.dpi
                         )
                     else:
                         # 默认生成饼图
                         image_path = self.chart_generator.generate_pie_chart(
                             title=title,
                             data=data,
-                            width_cm=self.config.get('chart_width', 14.0),
-                            dpi=self.config.get('chart_dpi', 300)
+                            width_cm=self.config.chart.width,
+                            dpi=self.config.chart.dpi
                         )
                     
                     print(f"图表生成成功: {image_path}")
@@ -1414,13 +1298,13 @@ class WordGenerator:
                     import time
                     start_time = time.time()
                     # 插入Word时使用配置的宽度（默认14.0厘米）
-                    insert_width = self.config.get('chart_insert_width', 14.0)
+                    insert_width = self.config.chart.insert_width
                     run.add_picture(image_path, width=Cm(insert_width))
                     elapsed_time = time.time() - start_time
                     print(f"成功插入图表 ({mode}模式): {image_path} (宽度: {insert_width}cm, 耗时: {elapsed_time:.2f}秒)")
                     
                     # 可选：添加图表标题
-                    if self.config.get('add_chart_title', False):
+                    if self.config.chart.add_title:
                         # 创建标题段落
                         title_p_xml = '<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>'
                         title_new_p = parse_xml(title_p_xml)
@@ -1490,13 +1374,13 @@ class WordGenerator:
                 import time
                 start_time = time.time()
                 # 插入Word时使用配置的宽度（默认14.0厘米）
-                insert_width = self.config.get('chart_insert_width', 14.0)
+                insert_width = self.config.chart.insert_width
                 run.add_picture(image_path, width=Cm(insert_width))
                 elapsed_time = time.time() - start_time
                 print(f"成功插入图表到文档末尾: {image_path} (宽度: {insert_width}cm, 耗时: {elapsed_time:.2f}秒)")
                 
                 # 可选：添加图表标题
-                if self.config.get('add_chart_title', False):
+                if self.config.chart.add_title:
                     title_para = self.document.add_paragraph()
                     title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     # 从chart_data中找到对应的标题

@@ -36,14 +36,28 @@ class ChartGenerator:
         '#FF006E'   # 粉红色
     ]
     
-    def __init__(self, output_dir: Optional[str] = None):
+    def __init__(self, output_dir: Optional[str] = None, config: Optional[Dict] = None):
         """初始化生成器
         
         Args:
             output_dir: 图片输出目录，如果不提供则使用临时目录
+            config: 图表配置字典，包含 background_color, chart_colors, font_sizes 等
         """
         self.output_dir = output_dir or tempfile.gettempdir()
         self._font_file_path = None  # 保存字体文件路径
+        self.config = config or {}
+        
+        # 从配置中读取参数
+        self.background_color = self.config.get('background_color', '#FFFFFF')
+        self.chart_colors = self.config.get('chart_colors', self.DEFAULT_COLORS)
+        self.font_sizes = self.config.get('font_sizes', {
+            'title': 14,
+            'label': 10,
+            'legend': 10,
+            'value': 9,
+            'y_axis': 12
+        })
+        
         self._setup_fonts()
     
     def _setup_fonts(self):
@@ -280,8 +294,8 @@ class ChartGenerator:
         if sum(sizes) == 0:
             raise ValueError("所有数据值不能为0")
         
-        # 使用提供的颜色或默认颜色
-        chart_colors = colors or self.DEFAULT_COLORS
+        # 使用提供的颜色或配置中的颜色或默认颜色
+        chart_colors = colors or self.chart_colors or self.DEFAULT_COLORS
         # 如果数据项多于颜色，循环使用颜色
         if len(sizes) > len(chart_colors):
             chart_colors = (chart_colors * ((len(sizes) // len(chart_colors)) + 1))[:len(sizes)]
@@ -307,7 +321,7 @@ class ChartGenerator:
                 colors=chart_colors,
                 autopct='%1.0f%%',  # 显示百分比，不带小数
                 startangle=90,
-                textprops={'fontsize': 10, 'weight': 'bold', 'color': 'white'}  # 百分比文字样式
+                textprops={'fontsize': self.font_sizes.get('value', 10), 'weight': 'bold', 'color': 'white'}  # 百分比文字样式
             )
             
             # 设置百分比文字背景为黑色矩形
@@ -384,14 +398,14 @@ class ChartGenerator:
                     text = ax.text(
                         x, y, f'{pct:.0f}%',
                         ha=ha, va=va,
-                        fontsize=10, weight='bold', color=text_color,
+                        fontsize=self.font_sizes.get('value', 10), weight='bold', color=text_color,
                         fontproperties=font_prop
                     )
                 else:
                     text = ax.text(
                         x, y, f'{pct:.0f}%',
                         ha=ha, va=va,
-                        fontsize=10, weight='bold', color=text_color
+                        fontsize=self.font_sizes.get('value', 10), weight='bold', color=text_color
                     )
                 
                 # 只为内部标注添加黑色背景，外部标注不添加背景
@@ -414,24 +428,32 @@ class ChartGenerator:
                 labels, 
                 loc="center left", 
                 bbox_to_anchor=(1, 0, 0.5, 1), 
-                fontsize=10,
-                prop=font_prop
+                fontsize=self.font_sizes.get('legend', 10),
+                prop=font_prop,
+                facecolor=self.background_color,
+                framealpha=1.0
             )
             # 设置标题（使用字体文件路径）
-            plt.title(title, fontsize=14, fontweight='bold', pad=20, fontproperties=font_prop)
+            plt.title(title, fontsize=self.font_sizes.get('title', 14), fontweight='bold', pad=20, fontproperties=font_prop)
         else:
             ax.legend(
                 wedges, 
                 labels, 
                 loc="center left", 
                 bbox_to_anchor=(1, 0, 0.5, 1), 
-                fontsize=10
+                fontsize=self.font_sizes.get('legend', 10),
+                facecolor=self.background_color,
+                framealpha=1.0
             )
             # 设置标题
-            plt.title(title, fontsize=14, fontweight='bold', pad=20)
+            plt.title(title, fontsize=self.font_sizes.get('title', 14), fontweight='bold', pad=20)
         
         # 确保饼图是圆的
         ax.set_aspect('equal')
+        
+        # 设置图表背景色
+        fig.patch.set_facecolor(self.background_color)
+        ax.set_facecolor(self.background_color)
         
         # 调整布局，为图例留出空间
         plt.tight_layout()
@@ -447,7 +469,7 @@ class ChartGenerator:
             filepath,
             dpi=dpi,
             bbox_inches='tight',
-            facecolor='white',
+            facecolor=self.background_color,
             transparent=False
         )
         
@@ -523,8 +545,8 @@ class ChartGenerator:
         labels = list(data.keys())
         values = [float(v) for v in data.values()]
         
-        # 使用提供的颜色或默认颜色
-        chart_colors = colors or self.DEFAULT_COLORS
+        # 使用提供的颜色或配置中的颜色或默认颜色
+        chart_colors = colors or self.chart_colors or self.DEFAULT_COLORS
         
         # 创建图形
         height_cm = 10.0
@@ -539,23 +561,24 @@ class ChartGenerator:
         
         # 设置字体（使用与饼图相同的字体设置）
         from matplotlib.font_manager import FontProperties
+        font_prop = None
         if self._font_file_path:
             font_prop = FontProperties(fname=self._font_file_path)
             # 设置标题和y轴标签
-            plt.title(title, fontsize=14, fontweight='bold', fontproperties=font_prop)
-            ax.set_ylabel('数值', fontproperties=font_prop, fontsize=12)
+            plt.title(title, fontsize=self.font_sizes.get('title', 14), fontweight='bold', fontproperties=font_prop)
+            ax.set_ylabel('数值', fontproperties=font_prop, fontsize=self.font_sizes.get('y_axis', 12))
             
             # 设置x轴标签
             ax.set_xticks(range(len(labels)))
-            ax.set_xticklabels(labels, rotation=30, ha='right', fontproperties=font_prop, fontsize=10)
+            ax.set_xticklabels(labels, rotation=30, ha='right', fontproperties=font_prop, fontsize=self.font_sizes.get('label', 10))
         else:
             # 设置标题和y轴标签
-            plt.title(title, fontsize=14, fontweight='bold')
-            ax.set_ylabel('数值', fontsize=12)
+            plt.title(title, fontsize=self.font_sizes.get('title', 14), fontweight='bold')
+            ax.set_ylabel('数值', fontsize=self.font_sizes.get('y_axis', 12))
             
             # 设置x轴标签
             ax.set_xticks(range(len(labels)))
-            ax.set_xticklabels(labels, rotation=30, ha='right', fontsize=10)
+            ax.set_xticklabels(labels, rotation=30, ha='right', fontsize=self.font_sizes.get('label', 10))
         
         # 设置y轴范围
         max_value = max(values) if values else 1
@@ -564,14 +587,14 @@ class ChartGenerator:
         # 在柱状图上显示数值
         for bar, value in zip(bars, values):
             height = bar.get_height()
-            if self._font_file_path:
+            if font_prop:
                 ax.text(
                     bar.get_x() + bar.get_width() / 2., 
                     height,
                     f'{value:.0f}',
                     ha='center', 
                     va='bottom',
-                    fontsize=10,
+                    fontsize=self.font_sizes.get('value', 10),
                     fontproperties=font_prop
                 )
             else:
@@ -581,7 +604,7 @@ class ChartGenerator:
                     f'{value:.0f}',
                     ha='center', 
                     va='bottom',
-                    fontsize=10
+                    fontsize=self.font_sizes.get('value', 10)
                 )
         
         # 设置网格
@@ -594,7 +617,10 @@ class ChartGenerator:
         import uuid
         filename = f"chart_{uuid.uuid4().hex[:8]}.png"
         filepath = os.path.join(self.output_dir, filename)
-        plt.savefig(filepath, dpi=dpi, bbox_inches='tight', facecolor='white')
+        # 设置图表背景色
+        fig.patch.set_facecolor(self.background_color)
+        ax.set_facecolor(self.background_color)
+        plt.savefig(filepath, dpi=dpi, bbox_inches='tight', facecolor=self.background_color)
         plt.close(fig)
         
         return filepath
@@ -636,7 +662,7 @@ class ChartGenerator:
         offset = total_group_width / 2 - bar_width / 2
         
         # 绘制每个系列的柱状图，保存第一个 bar 用于图例
-        font_value = get_font(8)
+        font_value = get_font(self.font_sizes.get('value', 8))
         legend_handles = []  # 保存每个系列的第一个 bar (Patch 对象)
         legend_labels = []   # 保存系列名称
         
@@ -652,23 +678,24 @@ class ChartGenerator:
             
             # 数据标签
             for bar, value in zip(bars, values):
-                if value > 0:
-                    ax.text(bar.get_x() + bar.get_width() / 2., bar.get_height(),
-                            f'{value:.0f}', ha='center', va='bottom',
-                            fontproperties=font_value, fontsize=8)
+                    if value > 0:
+                        ax.text(bar.get_x() + bar.get_width() / 2., bar.get_height(),
+                                f'{value:.0f}', ha='center', va='bottom',
+                                fontproperties=font_value, fontsize=self.font_sizes.get('value', 8))
         
         # 设置标题和轴
-        font_title = get_font(14)
-        font_tick = get_font(10)
-        ax.set_title(title, fontproperties=font_title, fontsize=14, fontweight='bold')
-        ax.set_ylabel('数值', fontproperties=font_tick, fontsize=12)
+        font_title = get_font(self.font_sizes.get('title', 14))
+        font_tick = get_font(self.font_sizes.get('label', 10))
+        ax.set_title(title, fontproperties=font_title, fontsize=self.font_sizes.get('title', 14), fontweight='bold')
+        ax.set_ylabel('数值', fontproperties=font_tick, fontsize=self.font_sizes.get('y_axis', 12))
         ax.set_xticks(x)
-        ax.set_xticklabels(labels, rotation=30, ha='right', fontproperties=font_tick, fontsize=10)
+        ax.set_xticklabels(labels, rotation=30, ha='right', fontproperties=font_tick, fontsize=self.font_sizes.get('label', 10))
         
         # 图例 - 使用每个系列的第一个 bar (Patch)，确保颜色与柱子完全对应
         font_legend = get_font(10)
         ax.legend(legend_handles, legend_labels, loc='center left', bbox_to_anchor=(1.02, 0.5),
-                  prop=font_legend, frameon=True, fancybox=True, shadow=True)
+                  prop=font_legend, frameon=True, fancybox=True, shadow=True,
+                  facecolor=self.background_color, framealpha=1.0)
         
         # Y轴范围和网格
         all_values = [float(v) for series in data.values() for v in series.values()]
@@ -678,7 +705,10 @@ class ChartGenerator:
         
         # 保存图片
         filepath = os.path.join(self.output_dir, f"chart_{uuid.uuid4().hex[:8]}.png")
-        fig.savefig(filepath, dpi=dpi, bbox_inches='tight', facecolor='white')
+        # 设置图表背景色
+        fig.patch.set_facecolor(self.background_color)
+        ax.set_facecolor(self.background_color)
+        fig.savefig(filepath, dpi=dpi, bbox_inches='tight', facecolor=self.background_color)
         plt.close(fig)
         
         return filepath
@@ -735,8 +765,8 @@ class ChartGenerator:
         # 确保数值为数字
         values = [float(v) for v in values]
         
-        # 使用提供的颜色或默认颜色
-        chart_colors = colors or self.DEFAULT_COLORS
+        # 使用提供的颜色或配置中的颜色或默认颜色
+        chart_colors = colors or self.chart_colors or self.DEFAULT_COLORS
         line_color = chart_colors[0]  # 折线图通常使用单一颜色
         
         # 创建图形，高度固定
@@ -767,9 +797,9 @@ class ChartGenerator:
         ax.set_xticks(x_positions)
         if font_prop:
             # 为每个标签设置字体属性，确保中文正常显示
-            ax.set_xticklabels(labels, rotation=45, ha='right', fontproperties=font_prop, fontsize=10)
+            ax.set_xticklabels(labels, rotation=45, ha='right', fontproperties=font_prop, fontsize=self.font_sizes.get('label', 10))
         else:
-            ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=10)
+            ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=self.font_sizes.get('label', 10))
         
         # 计算y轴范围，为数值标签留出空间
         min_value = min(values) if values else 0
@@ -791,7 +821,7 @@ class ChartGenerator:
                     f'{value:.0f}' if value == int(value) else f'{value:.1f}',
                     ha='center',
                     va='bottom',
-                    fontsize=9,
+                    fontsize=self.font_sizes.get('value', 9),
                     fontweight='bold',
                     fontproperties=font_prop
                 )
@@ -802,20 +832,20 @@ class ChartGenerator:
                     f'{value:.0f}' if value == int(value) else f'{value:.1f}',
                     ha='center',
                     va='bottom',
-                    fontsize=9,
+                    fontsize=self.font_sizes.get('value', 9),
                     fontweight='bold'
                 )
         
         # 设置标题和轴标签（使用字体文件路径确保中文显示）
         if font_prop:
-            plt.title(title, fontsize=14, fontweight='bold', pad=20, fontproperties=font_prop)
+            plt.title(title, fontsize=self.font_sizes.get('title', 14), fontweight='bold', pad=20, fontproperties=font_prop)
             # 设置y轴标签字体
-            ax.set_ylabel('数值', fontproperties=font_prop, fontsize=12)
-            ax.set_xlabel('', fontproperties=font_prop, fontsize=12)
+            ax.set_ylabel('数值', fontproperties=font_prop, fontsize=self.font_sizes.get('y_axis', 12))
+            ax.set_xlabel('', fontproperties=font_prop, fontsize=self.font_sizes.get('label', 12))
         else:
-            plt.title(title, fontsize=14, fontweight='bold', pad=20)
-            ax.set_ylabel('数值', fontsize=12)
-            ax.set_xlabel('', fontsize=12)
+            plt.title(title, fontsize=self.font_sizes.get('title', 14), fontweight='bold', pad=20)
+            ax.set_ylabel('数值', fontsize=self.font_sizes.get('y_axis', 12))
+            ax.set_xlabel('', fontsize=self.font_sizes.get('label', 12))
         
         # 设置网格
         ax.grid(axis='y', alpha=0.3, linestyle='--')
@@ -833,13 +863,17 @@ class ChartGenerator:
         filename = f"chart_{uuid.uuid4().hex[:8]}.png"
         filepath = os.path.join(self.output_dir, filename)
         
+        # 设置图表背景色
+        fig.patch.set_facecolor(self.background_color)
+        ax.set_facecolor(self.background_color)
+        
         # 保存图片
         print(f"正在保存图片到: {filepath}, DPI: {dpi}")
         plt.savefig(
             filepath,
             dpi=dpi,
             bbox_inches='tight',
-            facecolor='white',
+            facecolor=self.background_color,
             transparent=False
         )
         
@@ -878,8 +912,8 @@ class ChartGenerator:
         from matplotlib.font_manager import FontProperties
         import uuid
         
-        # 字号配置
-        FONT_SIZE = {'title': 11, 'tick': 5.5, 'legend': 5.5, 'value': 4}
+        # 字号配置（已从配置中读取，这里保留作为备用）
+        # FONT_SIZE = {'title': 11, 'tick': 5.5, 'legend': 5.5, 'value': 5}
         
         # 创建带字号的字体属性（解决 fontsize/fontproperties 冲突问题）
         def get_font(size: float) -> Optional[FontProperties]:
@@ -907,16 +941,16 @@ class ChartGenerator:
             color = chart_colors[i % len(chart_colors)]
             
             ax.plot(x_pos, values, marker='o', linestyle='-', linewidth=1.2,
-                    markersize=4, color=color, label=series_name)
+                    markersize=3, color=color, label=series_name)
             
             # 数据点标签
             value_range = (max(all_values) - min(all_values)) if len(all_values) > 1 else 1
-            font_value = get_font(FONT_SIZE['value'])
+            font_value = get_font(self.font_sizes.get('value', 5))
             for x, v in zip(x_pos, values):
                 if v > 0:
                     text = f'{v:.0f}' if v == int(v) else f'{v:.1f}'
                     ax.text(x, v + value_range * 0.008, text, ha='center', va='bottom',
-                            fontproperties=font_value, fontsize=FONT_SIZE['value'])
+                            fontproperties=font_value, fontsize=self.font_sizes.get('value', 5))
         
         # Y轴范围
         if all_values:
@@ -926,36 +960,40 @@ class ChartGenerator:
         
         # X轴标签
         ax.set_xticks(x_pos)
-        font_tick = get_font(FONT_SIZE['tick'])
+        font_tick = get_font(self.font_sizes.get('label', 5.5))
         ax.set_xticklabels(all_labels, rotation=45, ha='right', 
-                          fontproperties=font_tick, fontsize=FONT_SIZE['tick'])
+                          fontproperties=font_tick, fontsize=self.font_sizes.get('label', 5.5))
         
         # Y轴刻度字体（使用 tick_params 确保生效）
-        ax.tick_params(axis='y', labelsize=FONT_SIZE['tick'])
+        ax.tick_params(axis='y', labelsize=self.font_sizes.get('label', 5.5))
         if font_tick:
             for label in ax.get_yticklabels():
                 label.set_fontproperties(font_tick)
         
         # 标题
-        font_title = get_font(FONT_SIZE['title'])
-        ax.set_title(title, fontproperties=font_title, fontsize=FONT_SIZE['title'], 
+        font_title = get_font(self.font_sizes.get('title', 11))
+        ax.set_title(title, fontproperties=font_title, fontsize=self.font_sizes.get('title', 11), 
                      fontweight='bold', pad=20)
         
         # Y轴标签
-        ax.set_ylabel('数值', fontproperties=font_tick, fontsize=FONT_SIZE['tick'])
+        ax.set_ylabel('数值', fontproperties=font_tick, fontsize=self.font_sizes.get('y_axis', 5.5))
         
         # 图例
-        font_legend = get_font(FONT_SIZE['legend'])
+        font_legend = get_font(self.font_sizes.get('legend', 5.5))
         ax.legend(loc='center left', bbox_to_anchor=(1.005, 0.5),
                   prop=font_legend, frameon=True, fancybox=False, shadow=False,
-                  borderpad=0.3, handlelength=1.2, handletextpad=0.3)
+                  borderpad=0.3, handlelength=1.2, handletextpad=0.3,
+                  facecolor=self.background_color, framealpha=1.0)
         
         # 网格
         ax.grid(axis='both', alpha=0.3, linestyle='--')
         
         # 保存图片
         filepath = os.path.join(self.output_dir, f"chart_{uuid.uuid4().hex[:8]}.png")
-        fig.savefig(filepath, dpi=dpi, bbox_inches='tight', facecolor='white')
+        # 设置图表背景色
+        fig.patch.set_facecolor(self.background_color)
+        ax.set_facecolor(self.background_color)
+        fig.savefig(filepath, dpi=dpi, bbox_inches='tight', facecolor=self.background_color)
         plt.close(fig)
         
         # 压缩大图片

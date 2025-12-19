@@ -1,0 +1,166 @@
+# 统一样式配置文件
+# 这是系统默认配置，可以通过 JSON API 参数覆盖
+
+# 页面设置
+page:
+  size: A4
+  width: 21.0           # cm
+  height: 29.7          # cm
+  orientation: portrait
+  margin_top: 2.5       # cm
+  margin_bottom: 2.5
+  margin_left: 3.0
+  margin_right: 2.5
+
+# 正文样式
+body:
+  font:
+    family: "宋体"
+    size: 14            # pt (四号字体)
+    color: "#000000"
+    bold: false
+    italic: false
+  paragraph:
+    alignment: left
+    line_spacing: 28    # 28磅固定值行距
+    space_before: 0
+    space_after: 0
+    first_line_indent: 0  # 0表示动态计算两个字符宽度
+
+# 标题样式
+headings:
+  # 通用默认样式（H4-H6 使用）
+  default:
+    font:
+      family: "黑体"
+      size: 15          # 小三号字体
+      color: "#000000"
+      bold: true
+    paragraph:
+      alignment: left
+      line_spacing: 28  # 28磅固定值
+      space_before: 0
+      space_after: 0
+      keep_with_next: true
+  
+  # H1 - 一级标题（特殊：居中，宋体，不加粗）
+  h1:
+    font:
+      family: "宋体"
+      size: 22          # 二号字体
+      color: "#000000"
+      bold: false
+    paragraph:
+      alignment: center
+      line_spacing: 1.25  # 1.25倍行距
+      space_before: 0
+      space_after: 0
+      keep_with_next: true
+  
+  # H2 - 二级标题
+  h2:
+    font:
+      family: "黑体"
+      size: 16          # 三号字体
+      color: "#000000"
+      bold: true
+    paragraph:
+      alignment: left
+      line_spacing: 28
+      space_before: 0
+      space_after: 0
+      keep_with_next: true
+  
+  # H3 - 三级标题
+  h3:
+    font:
+      family: "黑体"
+      size: 16          # 小三号字体
+      color: "#000000"
+      bold: true
+    paragraph:
+      alignment: left
+      line_spacing: 28
+      space_before: 0
+      space_after: 0
+      keep_with_next: true
+
+# 代码样式
+code_inline:
+  font:
+    family: "Consolas"
+    size: 10
+    color: "#d32f2f"
+  background_color: "#f5f5f5"
+
+code_block:
+  font:
+    family: "Consolas"
+    size: 9
+    color: "#333333"
+  paragraph:
+    line_spacing: 1.2
+    left_indent: 0.2    # cm
+    space_before: 6
+    space_after: 6
+  background_color: "#f5f5f5"
+
+# 表格样式
+table:
+  border_width: 1.0     # pt
+  border_color: "#424242"
+  cell_padding: 6       # pt
+  cell_alignment: center
+  cell_font_family: "微软雅黑"
+  cell_font_size: 9     # 小五
+  header_background: "#f44336"
+  header_font_color: "#ffffff"
+  header_font_bold: true
+  alternate_row_color: "#fff3e0"
+
+# 引用样式
+quote:
+  font:
+    family: "宋体"
+    size: 10
+    color: "#666666"
+    italic: true
+  paragraph:
+    left_indent: 0.5    # cm
+    line_spacing: 1.5
+    space_before: 6
+    space_after: 6
+  background_color: "#fff3e0"
+
+# 列表缩进
+list_indent: 1.27       # cm
+
+# 图表样式
+chart:
+  width: 14.0           # cm (生成时的宽度)
+  insert_width: 14.0    # cm (插入Word时的宽度)
+  dpi: 150
+  background_color: "#C3C3C3"
+  colors:               # 配色方案
+    - "#2E86AB"
+    - "#A23B72"
+    - "#F18F01"
+    - "#C73E1D"
+    - "#6A994E"
+    - "#BC4749"
+    - "#F77F00"
+    - "#FCBF49"
+    - "#06A77D"
+    - "#7209B7"
+    - "#3A86FF"
+    - "#FF006E"
+  font_sizes:
+    title: 14
+    label: 10
+    legend: 10
+    value: 9
+    y_axis: 12
+  add_title: false
+
+# 页码
+enable_page_numbers: true

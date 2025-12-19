@@ -1,0 +1,59 @@
+# 学术论文主题
+
+body:
+  font:
+    family: "Times New Roman"
+    size: 12
+  paragraph:
+    line_spacing: 2.0   # 双倍行距
+    alignment: justify  # 两端对齐
+    first_line_indent: 1.27  # 首行缩进
+
+headings:
+  default:
+    font:
+      family: "Times New Roman"
+      bold: true
+  h1:
+    font:
+      size: 16
+    paragraph:
+      alignment: center
+      line_spacing: 1.5
+      space_before: 24
+      space_after: 12
+  h2:
+    font:
+      size: 14
+    paragraph:
+      line_spacing: 1.5
+      space_before: 18
+      space_after: 8
+  h3:
+    font:
+      size: 13
+    paragraph:
+      line_spacing: 1.5
+      space_before: 12
+      space_after: 6
+
+code_inline:
+  font:
+    family: "Courier New"
+    size: 10
+
+code_block:
+  font:
+    family: "Courier New"
+    size: 10
+  background_color: "#ffffff"
+
+table:
+  border_color: "#000000"
+  header_background: "#ffffff"
+  header_font_color: "#000000"
+  alternate_row_color: "#ffffff"
+
+chart:
+  background_color: "#ffffff"
+

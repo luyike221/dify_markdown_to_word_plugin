@@ -147,6 +147,10 @@ All parameters are defined in `tools/markdown_to_word.yaml`:
 
 - **templates** (string, optional): Theme/template name, default `"default"`
   - Available values: `default`, `academic`, `business`, `minimal`, `dark`, `colorful`
+- **style_config** (string, optional): Style configuration in JSON format
+  - See `style_config.json.example` for complete template
+  - See `style_config.simple.json` for quick start
+  - See `STYLE_CONFIG_README.md` for detailed documentation
   
 - **font_family** (string, optional): Font family, default `"Microsoft YaHei"`
   - Common values: `"Microsoft YaHei"`, `"SimSun"`, `"Times New Roman"`, `"Calibri"`, `"Helvetica"`

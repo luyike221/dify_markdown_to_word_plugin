@@ -1,0 +1,66 @@
+# 商务报告主题
+
+body:
+  font:
+    family: "Calibri"
+    size: 11
+    color: "#333333"
+  paragraph:
+    line_spacing: 1.15
+    space_after: 8
+
+headings:
+  default:
+    font:
+      family: "Calibri"
+      color: "#2c5aa0"
+      bold: true
+  h1:
+    font:
+      size: 20
+    paragraph:
+      alignment: left
+      space_before: 24
+      space_after: 12
+  h2:
+    font:
+      size: 16
+    paragraph:
+      space_before: 18
+      space_after: 10
+  h3:
+    font:
+      size: 14
+    paragraph:
+      space_before: 14
+      space_after: 8
+
+code_inline:
+  font:
+    family: "Consolas"
+    color: "#d73a49"
+
+code_block:
+  font:
+    family: "Consolas"
+    color: "#333333"
+  background_color: "#f6f8fa"
+
+table:
+  border_color: "#cccccc"
+  header_background: "#2c5aa0"
+  header_font_color: "#ffffff"
+  alternate_row_color: "#f8f9fa"
+
+chart:
+  background_color: "#ffffff"
+  colors:
+    - "#2c5aa0"
+    - "#0366d6"
+    - "#6f42c1"
+    - "#d73a49"
+    - "#28a745"
+    - "#ffd33d"
+    - "#f66a0a"
+    - "#6a737d"
+
