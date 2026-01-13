@@ -1,10 +1,341 @@
+
+
+
 # Smart Doc Generator (Dify Plugin)
 
 A smart Markdown to Word document generator with **automatic chart generation** (pie charts, bar charts, line charts) and flexible template mechanism, enabling rapid generation of formatted Word documents with rich visualizations for various scenarios.
 
+**Repository:** [https://github.com/luyike221/dify_markdown_to_word_plugin.git](https://github.com/luyike221/dify_markdown_to_word_plugin.git)
+
 ## Overview
 
 Smart Doc Generator is a powerful Dify plugin that converts Markdown content into professionally formatted Word documents (.docx). **The plugin's standout feature is its intelligent chart generation system** that automatically recognizes data patterns in Markdown and generates beautiful, professional charts (pie charts, bar charts, line charts) directly embedded in Word documents. Combined with a flexible template system, it enables rapid generation of data-rich, visually appealing documents.
+
+## 🚀 Quick Start - Usage Workflow
+
+### Core Usage Philosophy
+
+The plugin follows a **simple three-step workflow**:
+
+```
+Markdown Content → Template Selection → Word Document
+         ↓                ↓                    ↓
+    Your content    Choose style      Professional output
+```
+
+### Step-by-Step Usage Guide
+
+#### **Step 1: Prepare Your Markdown Content**
+Start with your Markdown text - this can be:
+- Plain Markdown text from your workflow
+- Generated content from AI models
+- Structured data formatted as Markdown tables
+- Any Markdown-formatted content
+
+**Example:**
+```markdown
+# Sales Report Q4 2024
+
+## Monthly Sales Data
+
+| Month | Sales | Growth |
+|-------|-------|--------|
+| Oct   | 1000  | +10%   |
+| Nov   | 1500  | +50%   |
+| Dec   | 1800  | +20%   |
+```
+
+#### **Step 2: Choose Your Template/Theme**
+Select a pre-built theme that matches your use case:
+
+| Use Case | Recommended Theme | Why |
+|----------|------------------|-----|
+| Business reports | `business` | Professional, modern styling |
+| Academic papers | `academic` | Times New Roman, double spacing |
+| System alerts | `default` | Formal, red accent colors |
+| Technical docs | `minimal` | Clean, minimalist design |
+| Presentations | `dark` | Dark theme suitable for screens |
+| Colorful reports | `colorful` | Rich color scheme |
+
+**Quick Selection:**
+```yaml
+templates: "business"  # Just specify the theme name
+```
+
+#### **Step 3: (Optional) Add Charts**
+If your document needs visualizations, enable chart generation:
+
+```yaml
+enable_charts: true
+chart_data: |
+  {
+    "charts": [
+      {
+        "type": "bar",
+        "title": "Monthly Sales Trend",
+        "position": "after:Monthly Sales Data",
+        "data": {
+          "Oct": 1000,
+          "Nov": 1500,
+          "Dec": 1800
+        }
+      }
+    ]
+  }
+```
+
+#### **Step 4: Get Your Word Document**
+The plugin returns:
+- **Word document (.docx)** - Ready to download and use
+- **JSON metadata** - Conversion summary and settings
+
+### Complete Workflow Example
+
+Here's a complete example showing the full workflow:
+
+```yaml
+# In your Dify workflow tool configuration:
+
+# 1. Provide your Markdown content
+markdown_text: |
+  # Annual Report 2024
+  ## Revenue Overview
+  Our revenue has shown consistent growth.
+  
+  | Quarter | Revenue |
+  |---------|---------|
+  | Q1      | 50000   |
+  | Q2      | 55000   |
+  | Q3      | 60000   |
+  | Q4      | 65000   |
+
+# 2. Select a theme
+templates: "business"
+
+# 3. (Optional) Enable charts
+enable_charts: true
+chart_data: |
+  {
+    "charts": [
+      {
+        "type": "line",
+        "title": "Revenue Trend",
+        "position": "after:Revenue Overview",
+        "data": {
+          "Q1": 50000,
+          "Q2": 55000,
+          "Q3": 60000,
+          "Q4": 65000
+        }
+      }
+    ]
+  }
+
+# 4. (Optional) Fine-tune settings
+font_size: 11
+page_margins: 2.0
+```
+
+### Usage Patterns
+
+#### **Pattern 1: Simple Document Generation**
+For basic Markdown-to-Word conversion:
+- Provide `markdown_text`
+- Select `templates` (or use default)
+- Get Word document
+
+#### **Pattern 2: Document with Charts**
+For data-rich documents:
+- Provide `markdown_text` with data tables
+- Set `enable_charts: true`
+- Provide `chart_data` with chart specifications
+- Get Word document with embedded charts
+
+#### **Pattern 3: Custom Styled Document**
+For specific styling requirements:
+- Provide `markdown_text`
+- Use `style_config` for advanced customization
+- Or override individual settings (`font_family`, `font_size`, etc.)
+- Get custom-styled Word document
+
+### Key Concepts to Understand
+
+1. **Templates vs. Style Config**
+   - **Templates**: Pre-built themes (quick start)
+   - **Style Config**: Advanced JSON configuration (full control)
+
+2. **Chart Positioning**
+   - Charts are positioned relative to document elements
+   - Use `"after:Heading Text"` to place charts after specific headings
+   - Charts are embedded as images in the document
+
+3. **Output Format**
+   - Always returns `.docx` file
+   - File appears in workflow results
+   - Can be downloaded directly
+
+## Installation
+
+### Prerequisites
+
+- Python 3.12
+- A running Dify instance
+- Dify Plugin SDK (installed automatically with the plugin)
+
+### Installation Steps
+
+1. **Download the Plugin Package**
+   - Download the `.difypkg` file from the releases page
+   - Or build it yourself using the Dify CLI tool (see Building section)
+
+2. **Install in Dify**
+   - Open your Dify instance
+   - Navigate to **Settings** → **Plugins**
+   - Click **Install Plugin**
+   - Upload the `.difypkg` file
+   - Wait for installation to complete
+
+3. **Verify Installation**
+   - The plugin should appear in your plugins list
+   - You can now use it in your workflows
+
+### Building from Source
+
+If you want to build the plugin package yourself:
+
+1. **Install Dify CLI Tool**
+   ```bash
+   wget https://github.com/langgenius/dify-plugin-daemon/releases/download/0.0.6/dify-plugin-linux-amd64
+   chmod +x dify-plugin-linux-amd64
+   ```
+
+2. **Package the Plugin**
+   ```bash
+   ./dify-plugin-linux-amd64 plugin package . -o smart_doc_generator-1.0.0.difypkg
+   ```
+
+## Usage
+
+### Understanding the Tool Parameters
+
+The plugin accepts parameters that control the conversion process. Understanding these parameters helps you use the plugin effectively:
+
+#### **Required Parameters**
+
+- **markdown_text** (string, required): The Markdown content to convert
+  - This is your source content
+  - Can include headings, tables, lists, code blocks, etc.
+  - Supports standard Markdown syntax
+
+#### **Template Selection Parameters**
+
+- **templates** (string, optional): Theme/template name, default `"default"`
+  - **Quick way**: Use pre-built themes (`default`, `academic`, `business`, `minimal`, `dark`, `colorful`)
+  - **Advanced way**: Use `style_config` for full control (see Template Configuration section)
+
+#### **Chart Generation Parameters**
+
+- **enable_charts** (boolean, optional): Enable automatic chart generation, default `false`
+  - Set to `true` to enable chart insertion
+  - Requires `chart_data` parameter when enabled
+
+- **chart_data** (string, optional): Processed chart data in JSON format
+  - Format: `{"charts": [{"type": "pie"|"bar"|"line", "title": "...", "position": "after:...", "data": {...}}]}`
+  - See Chart Generation Guide section for details
+
+- **chart_insert_width** (number, optional): Chart width in centimeters, default `14.0`
+  - Adjusts chart size in the document
+
+#### **Style Customization Parameters**
+
+- **style_config** (string, optional): Style configuration in JSON format
+  - **Full control**: Complete style customization
+  - See `style_config.json.example` for complete template
+  - See `style_config.simple.json` for quick start
+  - See `STYLE_CONFIG_README.md` for detailed documentation
+
+- **font_family** (string, optional): Font family, default `"Microsoft YaHei"`
+  - Common values: `"Microsoft YaHei"`, `"SimSun"`, `"Times New Roman"`, `"Calibri"`, `"Helvetica"`
+  - Overrides template font settings
+
+- **font_size** (number, optional): Body font size, default `12`
+  - Recommended range: 10-18
+  - Overrides template font size
+
+- **line_spacing** (number, optional): Line spacing, default `1.5`
+  - Common values: `1.0`, `1.5`, `2.0`
+  - Overrides template line spacing
+
+- **page_margins** (number, optional): Page margins in centimeters, default `2.5`
+  - Recommended range: 2.0-4.0, same for all sides
+  - Overrides template page margins
+
+- **paper_size** (string, optional): Paper size, default `"A4"`
+  - Available values: `"A4"`, `"A3"`, `"Letter"`
+
+- **output_file** (string, optional): Output file name, default `"output.docx"`
+
+### Usage Decision Tree
+
+Use this decision tree to determine how to use the plugin:
+
+```
+Start
+  ↓
+Do you need charts?
+  ├─ No → Use basic conversion
+  │        - markdown_text
+  │        - templates (optional)
+  │        - Get Word document
+  │
+  └─ Yes → Enable chart generation
+           - markdown_text
+           - templates (optional)
+           - enable_charts: true
+           - chart_data (required)
+           - Get Word document with charts
+
+Do you need custom styling?
+  ├─ No → Use pre-built templates
+  │        - templates: "business" / "academic" / etc.
+  │
+  └─ Yes → Use style_config or individual parameters
+           - style_config (full control)
+           - OR font_family, font_size, etc. (quick overrides)
+```
+
+### Basic Usage
+
+In a Dify workflow, simply provide Markdown text and select a template:
+
+```yaml
+markdown_text: "# Title\n\nThis is the body content..."
+templates: "default"  # Use default theme
+```
+
+### Output Results
+
+The tool returns two messages:
+
+1. **File (BLOB)**: Generated Word document (.docx)
+   - Appears in the workflow result's `files` field
+   - Can be downloaded directly
+   - MIME type: `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+
+2. **JSON Metadata**: Contains conversion result summary
+   ```json
+   {
+     "result": "success",
+     "output_file": "output.docx",
+     "file_size": 12345,
+     "settings": {
+       "template": "default",
+       "font_family": "Microsoft YaHei",
+       "font_size": 12,
+       ...
+     }
+   }
+   ```
 
 ## Key Features
 
@@ -134,71 +465,6 @@ In a Dify workflow, simply provide Markdown text and select a template:
 markdown_text: "# Title\n\nThis is the body content..."
 templates: "default"  # Use default theme
 ```
-
-### Tool Parameters
-
-All parameters are defined in `tools/markdown_to_word.yaml`:
-
-#### Required Parameters
-
-- **markdown_text** (string, required): The Markdown content to convert
-
-#### Optional Parameters
-
-- **templates** (string, optional): Theme/template name, default `"default"`
-  - Available values: `default`, `academic`, `business`, `minimal`, `dark`, `colorful`
-- **style_config** (string, optional): Style configuration in JSON format
-  - See `style_config.json.example` for complete template
-  - See `style_config.simple.json` for quick start
-  - See `STYLE_CONFIG_README.md` for detailed documentation
-  
-- **font_family** (string, optional): Font family, default `"Microsoft YaHei"`
-  - Common values: `"Microsoft YaHei"`, `"SimSun"`, `"Times New Roman"`, `"Calibri"`, `"Helvetica"`
-  
-- **font_size** (number, optional): Body font size, default `12`
-  - Recommended range: 10-18
-  
-- **line_spacing** (number, optional): Line spacing, default `1.5`
-  - Common values: `1.0`, `1.5`, `2.0`
-  
-- **page_margins** (number, optional): Page margins in centimeters, default `2.5`
-  - Recommended range: 2.0-4.0, same for all sides
-  
-- **paper_size** (string, optional): Paper size, default `"A4"`
-  - Available values: `"A4"`, `"A3"`, `"Letter"`
-  
-- **output_file** (string, optional): Output file name, default `"output.docx"`
-  
-- **enable_charts** (boolean, optional): Enable automatic chart generation, default `false`
-  
-- **chart_data** (string, optional): Processed chart data in JSON format
-  - Expected format: `{"charts": [{"type": "pie"|"bar"|"line", "title": "...", "position": "after:...", "data": {...}}]}`
-  
-- **chart_insert_width** (number, optional): Chart width in centimeters when inserted, default `14.0`
-
-### Output Results
-
-The tool returns two messages:
-
-1. **File (BLOB)**: Generated Word document (.docx)
-   - Appears in the workflow result's `files` field
-   - Can be downloaded directly
-   - MIME type: `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
-
-2. **JSON Metadata**: Contains conversion result summary
-   ```json
-   {
-     "result": "success",
-     "output_file": "output.docx",
-     "file_size": 12345,
-     "settings": {
-       "template": "default",
-       "font_family": "Microsoft YaHei",
-       "font_size": 12,
-       ...
-     }
-   }
-   ```
 
 ## Chart Generation Guide
 

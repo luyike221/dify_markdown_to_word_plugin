@@ -1089,7 +1089,8 @@ class WordGenerator:
             chart_config = {
                 'background_color': self.config.chart.background_color,
                 'chart_colors': self.config.chart.colors,
-                'font_sizes': self.config.chart.font_sizes
+                'font_sizes': self.config.chart.font_sizes,
+                'pie_threshold': self.config.chart.pie_threshold
             }
             self.chart_generator = ChartGenerator(config=chart_config)
             

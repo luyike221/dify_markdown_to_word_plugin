@@ -57,6 +57,7 @@ class ChartGenerator:
             'value': 9,
             'y_axis': 12
         })
+        self.pie_threshold = self.config.get('pie_threshold', 8.0)  # 饼图标注阈值（百分比）
         
         self._setup_fonts()
     
@@ -310,11 +311,11 @@ class ChartGenerator:
         total = sum(sizes)
         percentages = [s / total * 100 for s in sizes]
         
-        # 检查是否有小于8%的分块
-        has_small_slices = any(pct < 8 for pct in percentages)
+        # 检查是否有小于阈值的分块（使用配置中的阈值）
+        has_small_slices = any(pct < self.pie_threshold for pct in percentages)
         
         if not has_small_slices:
-            # 如果所有分块都大于等于8%，使用均匀分布（autopct自动标注）
+            # 如果所有分块都大于等于阈值，使用均匀分布（autopct自动标注）
             wedges, texts, autotexts = ax.pie(
                 sizes,
                 labels=None,  # 不显示标签在图上
@@ -353,8 +354,8 @@ class ChartGenerator:
                 
                 # 计算楔形的中心点坐标
                 # 根据切片大小决定标注位置
-                if pct >= 8:
-                    # 大切片（>=8%）：将百分比放在内部，距离圆心较近
+                if pct >= self.pie_threshold:
+                    # 大切片（>=阈值）：将百分比放在内部，距离圆心较近
                     # 使用不同的距离避免重叠
                     distance = 0.6 + (i % 3) * 0.1  # 错开距离：0.6, 0.7, 0.8
                     x = distance * np.cos(theta_center)
@@ -363,7 +364,7 @@ class ChartGenerator:
                     va = 'center'
                     use_connection = False
                 else:
-                    # 小切片（<8%）：将百分比放在外部，使用引线连接
+                    # 小切片（<阈值）：将百分比放在外部，使用引线连接
                     distance = 1.15 + (i % 2) * 0.1  # 错开距离：1.15, 1.25
                     x = distance * np.cos(theta_center)
                     y = distance * np.sin(theta_center)
@@ -645,7 +646,22 @@ class ChartGenerator:
         
         # 准备数据
         series_names = list(data.keys())
-        labels = sorted(set(label for series in data.values() for label in series.keys()))
+        # 保持标签的原始顺序（按照第一个系列的顺序，然后添加其他系列中缺失的标签）
+        labels = []
+        seen_labels = set()
+        # 先按照第一个系列的顺序添加标签
+        if series_names:
+            first_series = data[series_names[0]]
+            for label in first_series.keys():
+                if label not in seen_labels:
+                    labels.append(label)
+                    seen_labels.add(label)
+        # 然后添加其他系列中的标签（按照它们在各自系列中出现的顺序）
+        for series_name in series_names[1:]:
+            for label in data[series_name].keys():
+                if label not in seen_labels:
+                    labels.append(label)
+                    seen_labels.add(label)
         chart_colors = colors or self.DEFAULT_COLORS
         
         # 创建图形
@@ -923,7 +939,22 @@ class ChartGenerator:
         
         # 准备数据
         series_names = list(data.keys())
-        all_labels = sorted(set(label for series in data.values() for label in series.keys()))
+        # 保持标签的原始顺序（按照第一个系列的顺序，然后添加其他系列中缺失的标签）
+        all_labels = []
+        seen_labels = set()
+        # 先按照第一个系列的顺序添加标签
+        if series_names:
+            first_series = data[series_names[0]]
+            for label in first_series.keys():
+                if label not in seen_labels:
+                    all_labels.append(label)
+                    seen_labels.add(label)
+        # 然后添加其他系列中的标签（按照它们在各自系列中出现的顺序）
+        for series_name in series_names[1:]:
+            for label in data[series_name].keys():
+                if label not in seen_labels:
+                    all_labels.append(label)
+                    seen_labels.add(label)
         chart_colors = colors or self.DEFAULT_COLORS
         x_pos = range(len(all_labels))
         

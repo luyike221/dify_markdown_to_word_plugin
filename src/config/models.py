@@ -150,6 +150,7 @@ class ChartStyle:
     colors: List[str] = field(default_factory=list)
     font_sizes: Dict[str, int] = field(default_factory=dict)
     add_title: bool = False
+    pie_threshold: float = 8.0        # 饼图标注阈值（百分比），小于此值的切片数字标识会移到外部并使用引线
     
     def __post_init__(self):
         """初始化默认值"""

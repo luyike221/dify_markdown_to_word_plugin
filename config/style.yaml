@@ -161,6 +161,7 @@ chart:
     value: 9
     y_axis: 12
   add_title: false
+  pie_threshold: 8.0  # 饼图标注阈值（百分比），小于此值的切片数字标识会移到外部并使用引线
 
 # 页码
 enable_page_numbers: true

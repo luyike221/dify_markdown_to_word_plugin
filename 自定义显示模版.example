@@ -241,7 +241,8 @@
       "value": 9,
       "y_axis": 12
     },
-    "add_title": false
+    "add_title": false,
+    "pie_threshold": 8.0
   },
   "enable_page_numbers": true
 }
